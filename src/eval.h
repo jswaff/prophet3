@@ -45,6 +45,8 @@ const int32 king_safety_pawn_two_away = -20;
 const int32 king_safety_pawn_far_away = -30;
 const int32 king_safety_middle_open_file = -50;
 
+const int knight_tropism = -1;
+
 const int bishop_pst[64] = {
 	  0, 0,  0,  0,  0,  0, 0, 0,
 	  0, 7,  7,  7,  7,  7, 7, 0,
