@@ -5,3 +5,5 @@
 /Release
 /obj
 /.settings
+logfile.txt
+*.exe

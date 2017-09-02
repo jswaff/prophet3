@@ -3,16 +3,14 @@ CC = g++
 CFLAGS = -O3 -DNDEBUG -funroll-loops -fomit-frame-pointer 
 #CFLAGS = -O0 -g 
 
-DEFINES =
-LDFLAGS = 
+LIBS = -lsqlite3 -lpthread
 
 SRC = src/apply.cpp src/attack.cpp src/bitboards.cpp src/book.cpp src/draw.cpp src/drawboard.cpp \
 	src/eval.cpp src/evalks.cpp src/evalp.cpp src/extend.cpp src/globals.cpp \
 	src/hash.cpp src/init.cpp src/log.cpp src/magic.cpp src/main.cpp src/move.cpp src/movegen.cpp \
 	src/mvvlva.cpp src/next.cpp src/perft.cpp src/pos.cpp src/prune.cpp src/search.cpp \
 	src/see.cpp src/square.cpp src/suites.cpp src/think.cpp src/time.cpp src/utils.cpp \
-	src/xboard.cpp \
-	src/sqlite3.c
+	src/xboard.cpp 
 
 TESTSRC = test/apply__test.cpp test/attack__test.cpp test/bitboards__test.cpp test/defs__test.cpp \
 	test/draw__test.cpp test/eval__test.cpp test/evalp__test.cpp test/extend__test.cpp \
@@ -25,30 +23,25 @@ SOURCE = $(SRC) $(TESTSRC)
 #$(info $(SOURCE))
 
 OBJ=$(join $(addsuffix ../obj/, $(dir $(SOURCE))), $(notdir $(SOURCE:.cpp=.o))) 
-$(info $(OBJ))
+#$(info $(OBJ))
 
 all: $(OBJ)
-	$(CC) $(CFLAGS) $(DEFINES) $(LDFLAGS) $(OBJ) -o prophet3 -pthread
+	$(CC) $(CFLAGS) -o prophet3  $(OBJ) $(LIBS)
 
 clean:
 	rm -rf obj prophet3
 
-
-.cpp.o:
-	$(CC) $(CFLAGS) $< -o $@
 
 ## Rules for object files from cpp files
 ## Object file for each file is put in obj directory
 ## one level up from the actual source directory.
 src/../obj/%.o : src/%.cpp
 	@mkdir -p $(dir $@)
-	@echo "============="
-	@echo "Compiling $<"
+	@echo "Compiling source file: $<"
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 test/../obj/%.o : test/%.cpp
 	@mkdir -p $(dir $@)
-	@echo "============="
-	@echo "Compiling $<"
+	@echo "Compiling test file: $<"
 	@$(CC) $(CFLAGS) -c $< -o $@
 
