@@ -62,6 +62,13 @@ void test_rank_distance() {
 	assert(rank_distance(G8,B1)==7);
 }
 
+void test_distance() {
+	assert(distance(E4,E4)==0);
+	assert(distance(A1,A8)==7);
+	assert(distance(H1,E4)==3);
+	assert(distance(H8,E4)==4);
+}
+
 void test_north() {
 	assert(north(NO_SQUARE)==NO_SQUARE);
 	assert(north(B4)==B5);
@@ -152,6 +159,7 @@ void test_square() {
 	test_file();
 	test_rank_distance();
 	test_file_distance();
+	test_distance();
 	test_get_dir();
 	test_north();
 	test_east();

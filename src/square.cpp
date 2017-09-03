@@ -68,8 +68,7 @@ int32 file_distance(square_t sq1,square_t sq2) {
 int32 distance(square_t sq1,square_t sq2) {
 	assert(sq1 >= A8 && sq1 <= H1);
 	assert(sq2 >= A8 && sq2 <= H1);
-	//	return abs(RANK(sq1)-RANK(sq2)) + abs(FILE(sq1)-FILE(sq2));
-	return  0;
+	return std::max(rank_distance(sq1,sq2),file_distance(sq1,sq2));
 }
 
 square_t north(square_t sq) {
