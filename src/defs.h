@@ -332,6 +332,7 @@ file_t get_file(square_t sq);
 square_t get_square(rank_t rank,file_t file);
 int32 rank_distance(square_t sq1,square_t sq2);
 int32 file_distance(square_t sq1,square_t sq2);
+int32 distance(square_t sq1,square_t sq2);
 square_t north(square_t sq);
 square_t south(square_t sq);
 square_t east(square_t sq);

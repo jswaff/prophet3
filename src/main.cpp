@@ -19,7 +19,7 @@ uint32 hash_size = 0;
 
 
 void print_greeting() {
-	print("Hello!  This is the Prophet Chess Engine v3.0 build 20170719\n");
+	print("Hello!  This is the Prophet Chess Engine v3.0 KNIGHT_TROPISM\n");
 	print("James Swafford, 2011-2017\n\n");
 }
 

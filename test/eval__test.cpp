@@ -160,11 +160,17 @@ void test_king_pst() {
 	assert(0==pmat.val1-pmat.val2);
 
 	int32 score = eval(&pos,false);
+
+	int32 tropism_delta = knight_tropism * distance(F3,pos.black_king)
+		- knight_tropism * distance(G1,pos.black_king);
+
 	assert(score==pawn_pst[D4] -pawn_pst[D2] + pawn_pst[E3] -pawn_pst[E2]
 	             + bishop_pst[D3] - bishop_pst[F1]
 	             + knight_pst[F3] - knight_pst[G1]
 	             + rook_pst[E1] - rook_pst[H1]
-	             + king_pst[G1] - king_pst[E1]);
+	             + king_pst[G1] - king_pst[E1]
+	             + tropism_delta);
+
 }
 
 void test_king_endgame_pst() {
@@ -177,14 +183,18 @@ void test_king_endgame_pst() {
 	assert(0==npmat.val2);
 
 	expected += rook_open_file + knight_pst[B1]
+	        + knight_tropism * distance(B1,pos.black_king)
 	        + king_endgame_pst[F1] - king_pst[E5]
 	        - eval_scale(king_safety_middle_open_file,rook_val+knight_val+bishop_val);
 	assert(expected==eval(&pos,false));
 
 	// by removing a bishop both sides should be evaluated as in the endgame
 	set_pos(&pos,"8/8/8/4k3/8/8/8/RN3K2 b - - 0 1");
+
 	expected = -rook_val - knight_val - rook_open_file
-			- knight_pst[B1] - king_endgame_pst[F1]
+			- knight_pst[B1]
+			- knight_tropism * distance(B1,pos.black_king)
+			- king_endgame_pst[F1]
 			+ king_endgame_pst[E5];
 	assert(expected==eval(&pos,false));
 }
