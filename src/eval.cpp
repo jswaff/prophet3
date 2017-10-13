@@ -56,7 +56,6 @@ int32 eval_knights(position *p) {
 	while (pmap) {
 		square_t sq = (square_t)get_msb(pmap);
 		score += eval_knight(p,sq,true);
-		score += knight_tropism * distance(sq,p->black_king);
 		pmap ^= bb_squares[sq];
 	}
 
@@ -64,7 +63,6 @@ int32 eval_knights(position *p) {
 	while (pmap) {
 		square_t sq = (square_t)get_lsb(pmap);
 		score -= eval_knight(p,sq,false);
-		score -= knight_tropism * distance(sq,p->white_king);
 		pmap ^= bb_squares[sq];
 	}
 
@@ -72,7 +70,15 @@ int32 eval_knights(position *p) {
 }
 
 int32 eval_knight(position *p,square_t sq,bool wtm) {
-	return wtm ? knight_pst[sq] : knight_pst[fliprank[sq]];
+	int score;
+	if (wtm) {
+		score = knight_pst[sq];
+		score += knight_tropism * distance(sq,p->black_king);
+	} else {
+		score = knight_pst[fliprank[sq]];
+		score += knight_tropism * distance(sq,p->white_king);
+	}
+	return score;
 }
 
 int32 eval_bishops(position *p) {

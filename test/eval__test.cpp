@@ -29,10 +29,10 @@ void test_eval_pawn() {
 void test_eval_knight() {
 	position pos;
 	reset_pos(&pos);
-	assert(eval_knight(&pos,F3,true)==knight_pst[F3]);
-	assert(eval_knight(&pos,D6,true)==knight_pst[D6]);
-	assert(eval_knight(&pos,H3,false)==knight_pst[H6]);
-	assert(eval_knight(&pos,F7,false)==knight_pst[F2]);
+	assert(eval_knight(&pos,F3,true)==knight_pst[F3] + knight_tropism * distance(F3,E8));
+	assert(eval_knight(&pos,D6,true)==knight_pst[D6] + knight_tropism * distance(D6,E8));
+	assert(eval_knight(&pos,H3,false)==knight_pst[H6] + knight_tropism * distance(H6,E8));
+	assert(eval_knight(&pos,F7,false)==knight_pst[F2] + knight_tropism * distance(F2,E8));
 }
 
 void test_eval_bishop() {
