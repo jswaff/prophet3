@@ -199,7 +199,7 @@ void test_hash_table() {
 void test_draw_50() {
 	position pos;
 	// minus one rook, to ensure not draw by eval
-	set_pos(&pos,"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/1NBQKBNR w KQkq - 0 1");
+	set_pos(&pos,"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/1NBQKBNR w Kkq - 0 1");
 	clear_hash_table();
 
 	move_line pv; pv.n=0;

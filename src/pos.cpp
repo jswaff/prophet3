@@ -442,6 +442,7 @@ void flip_board(position *pos) {
 	}
 
 	pos->hash_key = build_hash_key(pos);
+	assert(test_pos_consistency(pos));
 }
 
 /*

@@ -407,6 +407,24 @@ bool test_pos_consistency(position *pos) {
 	assert(bb_wpieces==pos->white_pieces);
 	assert(bb_bpieces==pos->black_pieces);
 
+	// assert casting rights make sense
+	if (can_castle_bq(pos)) {
+		assert(pos->piece[E8]==-KING);
+		assert(pos->piece[A8]==-ROOK);
+	}
+	if (can_castle_bk(pos)) {
+		assert(pos->piece[E8]==-KING);
+		assert(pos->piece[H8]==-ROOK);
+	}
+	if (can_castle_wq(pos)) {
+		assert(pos->piece[E1]==KING);
+		assert(pos->piece[A1]==ROOK);
+	}
+	if (can_castle_wk(pos)) {
+		assert(pos->piece[E1]==KING);
+		assert(pos->piece[H1]==ROOK);
+	}
+
 	return true;
 }
 
