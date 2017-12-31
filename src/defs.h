@@ -85,6 +85,7 @@ typedef struct {
 	uint64 white_pieces;
 	uint64 black_pieces;
 	uint64 hash_key;
+	uint64 pawn_key;
 } position;
 
 typedef struct {
@@ -287,6 +288,8 @@ uint64 perft_iterate(int32 max_depth);
 void perft_test_fast();
 void perft_test_slow(int32 depth);
 
+// phash
+uint64 build_pawn_key(position *pos);
 
 // pos
 bool equal_pos(position* p1,position* p2,bool strict);

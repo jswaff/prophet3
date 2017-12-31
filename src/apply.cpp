@@ -142,7 +142,6 @@ void apply_move(position *p,move m,undo *undo_stack) {
 	p->hash_key ^= zkeys.ep[p->ep_sq];
 	p->hash_key ^= zkeys.casting_rights[p->castling_rights];
 
-	assert(p->hash_key==build_hash_key(p));
 	assert(test_pos_consistency(p));
 }
 

@@ -425,6 +425,9 @@ bool test_pos_consistency(position *pos) {
 		assert(pos->piece[H1]==ROOK);
 	}
 
+	assert(pos->hash_key==build_hash_key(pos));
+	assert(pos->pawn_key==build_pawn_key(pos));
+
 	return true;
 }
 
