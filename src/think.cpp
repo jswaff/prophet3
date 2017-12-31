@@ -49,7 +49,9 @@ void think(int32 max_depth,int32 remaining_time,int32 increment,bool show_thinki
 	memcpy(search_undos,gundos,gpos.move_counter * sizeof(undo));
 
 	abort_search = false;
-	clear_hash_table();
+	clear_hash_table(&htbl);
+	clear_hash_table(&phtbl);
+
 	pthread_create(&think_thread,NULL,think_helper,NULL);
 }
 
@@ -177,8 +179,11 @@ search_stats build_search_stats_dto(int32 max_search_time) {
 	stats.nodes=0;
 	stats.qnodes=0;
 	stats.hash_probes=0;
+	stats.pawn_hash_probes=0;
 	stats.hash_hits=0;
+	stats.pawn_hash_hits=0;
 	stats.hash_collisions=0;
+	stats.pawn_hash_collisions=0;
 	stats.fail_highs=0;
 	stats.fail_lows=0;
 	stats.hash_exact_scores=0;
@@ -215,6 +220,13 @@ void print_search_summary(search_stats *stats) {
 			stats->hash_probes/1000,
 			stats->hash_hits/1000,hash_hit_pct,
 			stats->hash_collisions/1000,hash_collision_pct);
+
+	float pawn_hash_hit_pct = stats->pawn_hash_hits / ((stats->pawn_hash_probes+1)/100.0);
+	float pawn_hash_collision_pct = stats->pawn_hash_collisions / ((stats->pawn_hash_probes+1)/100.0);
+	print("# pawn hash probes: %lluk, hits: %lluk (%.2f%%), collisions: %lluk (%.2f%%)\n",
+			stats->pawn_hash_probes/1000,
+			stats->pawn_hash_hits/1000,pawn_hash_hit_pct,
+			stats->pawn_hash_collisions/1000,pawn_hash_collision_pct);
 
 	float fail_high_pct = stats->fail_highs / ((stats->hash_probes+1)/100.0);
 	float fail_low_pct = stats->fail_lows / ((stats->hash_probes+1)/100.0);

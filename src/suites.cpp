@@ -81,7 +81,9 @@ void test_suite(char *tsfile,int32 tstime) {
 		}
 
 		abort_search = false;
-		clear_hash_table();
+		clear_hash_table(&htbl);
+		clear_hash_table(&phtbl);
+
 		move_line pv = iterate(&pos,tstime*1000,0,false,true);
 		num_total++;
 

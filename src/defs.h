@@ -102,8 +102,11 @@ typedef struct {
 	move_line last_pv;
 	move_line first_line_searched;
 	uint64 hash_probes;
+	uint64 pawn_hash_probes;
 	uint64 hash_hits;
+	uint64 pawn_hash_hits;
 	uint64 hash_collisions;
+	uint64 pawn_hash_collisions;
 	uint64 fail_highs;
 	uint64 fail_lows;
 	uint64 hash_exact_scores;
@@ -219,15 +222,17 @@ int32 extend(position *pos,move last_move,bool incheck);
 
 // hash
 uint64 build_hash_key(position *pos);
+uint64 build_pawn_key(position *pos);
 uint64 build_hash_val(hash_entry_t entry_type,int32 depth,int32 score,move mv);
 hash_entry_t get_hash_entry_type(uint64 val);
 int32 get_hash_entry_depth(uint64 val);
 int32 get_hash_entry_score(uint64 val);
 move get_hash_entry_move(uint64 val);
-void init_hash_table(uint32 tblsize);
-void clear_hash_table();
+void init_hash_table(hash_table *tbl,uint32 tblsize);
+void clear_hash_table(hash_table *tbl);
 uint64 get_hash_entry(uint64 key,search_stats *stats);
-void store_hash_entry(uint64 key,uint64 val);
+uint64 get_pawn_hash_entry(uint64 key,search_stats *stats);
+void store_hash_entry(hash_table *tbl,uint64 key,uint64 val);
 
 // init
 void init();
@@ -288,8 +293,6 @@ uint64 perft_iterate(int32 max_depth);
 void perft_test_fast();
 void perft_test_slow(int32 depth);
 
-// phash
-uint64 build_pawn_key(position *pos);
 
 // pos
 bool equal_pos(position* p1,position* p2,bool strict);

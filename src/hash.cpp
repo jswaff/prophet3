@@ -37,6 +37,26 @@ uint64 build_hash_key(position *pos) {
 	return hkey;
 }
 
+uint64 build_pawn_key(position *pos) {
+	uint64 pkey = 0;
+
+	uint64 pmap = pos->white_pawns;
+	while (pmap) {
+		square_t sq = (square_t)get_msb(pmap);
+		pkey ^= zkeys.pieces[PAWN][WHITE][sq];
+		pmap ^= bb_squares[sq];
+	}
+
+	pmap = pos->black_pawns;
+	while (pmap) {
+		square_t sq = (square_t)get_lsb(pmap);
+		pkey ^= zkeys.pieces[PAWN][BLACK][sq];
+		pmap ^= bb_squares[sq];
+	}
+
+	return pkey;
+}
+
 uint64 build_hash_val(hash_entry_t entry_type,int32 depth,int32 score,move mv) {
 	assert(entry_type >= LOWER_BOUND && entry_type <= EXACT_SCORE);
 	assert(depth >= 0);
@@ -103,10 +123,9 @@ move get_hash_entry_move(uint64 val) {
 	return val >> 35;
 }
 
-void init_hash_table(uint32 tblsize) {
+void init_hash_table(hash_table *tbl,uint32 tblsize) {
 	assert(tblsize > 0);
-	print("initializing hash table with %d bytes\n",tblsize);
-	htbl.tblptr = (hash_entry*)malloc(tblsize);
+	tbl->tblptr = (hash_entry*)malloc(tblsize);
 
 	int max_entries = tblsize / sizeof(hash_entry);
 	print("max hash entries: %d\n",max_entries);
@@ -118,14 +137,14 @@ void init_hash_table(uint32 tblsize) {
 	}
 	actual_entries /= 2;
 
-	htbl.tblmask = actual_entries - 1;
+	tbl->tblmask = actual_entries - 1;
 	print("effective hash entries: %d\n\n",actual_entries);
 }
 
-void clear_hash_table() {
-	assert(htbl.tblptr);
-	hash_entry *he = htbl.tblptr;
-	for (uint32 i=0;i<=htbl.tblmask;i++) {
+void clear_hash_table(hash_table *tbl) {
+	assert(tbl->tblptr);
+	hash_entry *he = tbl->tblptr;
+	for (uint32 i=0;i<=tbl->tblmask;i++) {
 		(he+i)->key = 0;
 		(he+i)->val = 0;
 	}
@@ -147,9 +166,25 @@ uint64 get_hash_entry(uint64 key,search_stats *stats) {
 	return 0;
 }
 
-void store_hash_entry(uint64 key,uint64 val) {
-	assert(htbl.tblptr);
-	hash_entry *he = htbl.tblptr + (key & htbl.tblmask);
+uint64 get_pawn_hash_entry(uint64 key,search_stats *stats) {
+	assert(phtbl.tblptr);
+	stats->pawn_hash_probes++;
+	hash_entry *he = phtbl.tblptr + (key & phtbl.tblmask);
+	if (he->val != 0) {
+		if (he->key == key) { // do full signature match
+			stats->pawn_hash_hits++;
+			return he->val;
+		} else {
+			stats->pawn_hash_collisions++;
+		}
+	}
+
+	return 0;
+}
+
+void store_hash_entry(hash_table *tbl,uint64 key,uint64 val) {
+	assert(tbl->tblptr);
+	hash_entry *he = tbl->tblptr + (key & tbl->tblmask);
 	he->key = key;
 	he->val = val;
 }

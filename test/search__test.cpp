@@ -15,7 +15,7 @@
 void test_matein1() {
 	position pos;
 	set_pos(&pos,"4k3/8/3Q4/2B5/8/8/1K6/8 w - -");
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
@@ -28,7 +28,7 @@ void test_matein1() {
 void test_matein1b() {
 	position pos;
 	set_pos(&pos,"4K3/8/8/3n2q1/8/8/3k4/8 b - -");
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
@@ -41,7 +41,7 @@ void test_matein1b() {
 void test_matein2() {
 	position pos;
 	set_pos(&pos,"r1bq2r1/b4pk1/p1pp1p2/1p2pP2/1P2P1PB/3P4/1PPQ2P1/R3K2R w - -");
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
@@ -54,7 +54,7 @@ void test_matein2() {
 void test_matein3() {
 	position pos;
 	set_pos(&pos,"r5rk/5p1p/5R2/4B3/8/8/7P/7K w - -");
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
@@ -67,7 +67,7 @@ void test_matein3() {
 void test_stalemate() {
 	position pos;
 	set_pos(&pos,"8/6p1/5p2/5k1K/7P/8/8/8 w - -");
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
@@ -89,7 +89,7 @@ void test_stalemate() {
 void test_abort_search() {
 	position pos;
 	reset_pos(&pos);
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
@@ -112,7 +112,7 @@ void test_abort_search() {
 void test_search_last_pv_first() {
 	position pos;
 	reset_pos(&pos);
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	// create an artificial PV and ensure the search examines it first
 	search_stats stats;
@@ -152,7 +152,7 @@ void test_search_last_pv_first() {
 void test_hash_table() {
 	position pos;
 	reset_pos(&pos);
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	position save_pos;
 	memcpy(&save_pos,&pos,sizeof(position));
@@ -183,7 +183,7 @@ void test_hash_table() {
 		if (*mp == a7a5) {
 			score = 500;
 		}
-		store_hash_entry(pos.hash_key,build_hash_val(EXACT_SCORE,1,score,*mp));
+		store_hash_entry(&htbl,pos.hash_key,build_hash_val(EXACT_SCORE,1,score,*mp));
 
 		memcpy(&pos,&save_pos2,sizeof(position));
 	}
@@ -200,7 +200,7 @@ void test_draw_50() {
 	position pos;
 	// minus one rook, to ensure not draw by eval
 	set_pos(&pos,"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/1NBQKBNR w Kkq - 0 1");
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
@@ -215,7 +215,7 @@ void test_draw_50() {
 	pos.fifty_counter = pos.move_counter= 98;
 	stats.start_time=milli_timer();
 	stats.stop_time=stats.start_time + 10000;
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	score = search(&pos,&pv,-INF,INF,2,&stats);
 	assert(score != DRAWSCORE);
 
@@ -223,7 +223,7 @@ void test_draw_50() {
 	pos.fifty_counter = pos.move_counter = 99;
 	stats.start_time=milli_timer();
 	stats.stop_time=stats.start_time + 10000;
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	score = search(&pos,&pv,-INF,INF,2,&stats);
 	assert(score == DRAWSCORE);
 }
@@ -232,7 +232,7 @@ void test_qsearch_does_not_expand_initial_position() {
 	position pos;
 	reset_pos(&pos);
 
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
 	stats.start_time=milli_timer();
@@ -250,7 +250,7 @@ void test_qsearch_standpat_raises_alpha() {
 	position pos;
 	reset_pos(&pos);
 
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	int32 score = eval(&pos,false);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
@@ -267,7 +267,7 @@ void test_qsearch_standpat_does_not_raise_alpha() {
 	position pos;
 	reset_pos(&pos);
 
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
 	stats.start_time=milli_timer();
@@ -283,7 +283,7 @@ void test_qsearch_expands_just_captures() {
 	position pos;
 	set_pos(&pos,"7k/8/8/3b4/8/8/6P1/K7 b - -");
 
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
 	stats.start_time=milli_timer();
@@ -301,7 +301,7 @@ void test_qsearch_does_expand_promotions() {
 	position pos;
 	set_pos(&pos,"8/P6k/8/8/8/8/7K/8 w - -");
 
-	clear_hash_table();
+	clear_hash_table(&htbl);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
 	stats.start_time=milli_timer();

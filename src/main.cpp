@@ -16,11 +16,12 @@ char *book_path = 0;
 char *tsfile = 0;
 int32 tstime = 5; // default to 5 seconds per problem
 uint32 hash_size = 0;
+uint32 pawn_hash_size = 0;
 
 
 void print_greeting() {
-	print("Hello!  This is the Prophet Chess Engine v3.0 20170909\n");
-	print("James Swafford, 2011-2017\n\n");
+	print("Hello!  This is the Prophet Chess Engine v3.0 20171231\n");
+	print("James Swafford, 2011-2018\n\n");
 }
 
 void assert_assumptions() {
@@ -65,7 +66,9 @@ bool run_tests() {
 	test_see();
 	print("testing complete.\n");
 	reset_pos(&gpos);
-	clear_hash_table();
+	clear_hash_table(&htbl);
+	clear_hash_table(&phtbl);
+
 	return true;
 }
 
@@ -78,6 +81,8 @@ void process_args(int argc,char *argv[]) {
 				book_path = strdup(p+1);
 			} else if (!strncmp(argv[i],"-hash",5)) {
 				hash_size = atoi(p+1) *1024*1024; // MB
+			} else if (!strncmp(argv[i],"-phash",6)) {
+				pawn_hash_size = atoi(p+1) *1024*1024; // MB
 			} else if (!strncmp(argv[i],"-suite",6)) {
 				tsfile = strdup(p+1);
 			} else if (!strncmp(argv[i],"-time",5)) {
@@ -98,7 +103,14 @@ int main(int argc,char *argv[]) {
 	init();
 
 	process_args(argc,argv);
-	init_hash_table(hash_size==0 ? default_hash_size : hash_size);
+
+	if (hash_size==0) hash_size = default_hash_size;
+	print("initializing hash table with %d bytes\n",hash_size);
+	init_hash_table(&htbl,hash_size);
+
+	if (pawn_hash_size==0) pawn_hash_size = default_hash_size;
+	print("initializing pawn hash table with %d bytes\n",pawn_hash_size);
+	init_hash_table(&phtbl,pawn_hash_size);
 
 	assert(run_tests());
 

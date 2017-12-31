@@ -336,7 +336,7 @@ void test_hash_val_exact_score() {
 }
 
 void test_store_and_probe() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	reset_pos(&pos);
 
@@ -348,7 +348,7 @@ void test_store_and_probe() {
 	assert(val==0);
 
 	move mv = to_move(PAWN,E2,E4);
-	store_hash_entry(key,build_hash_val(LOWER_BOUND,3,100,mv));
+	store_hash_entry(&htbl,key,build_hash_val(LOWER_BOUND,3,100,mv));
 	val = get_hash_entry(key,&stats);
 	assert(val > 0);
 	assert(get_hash_entry_type(val)==LOWER_BOUND);
@@ -370,14 +370,45 @@ void test_store_and_probe() {
 	assert(val==val2);
 }
 
+void test_pawn_store_and_probe() {
+	clear_hash_table(&phtbl);
+	position pos;
+	reset_pos(&pos);
+
+	uint64 key = build_pawn_key(&pos);
+
+	// shouldn't be anything
+	search_stats stats;
+	uint64 val = get_pawn_hash_entry(key,&stats);
+	assert(val==0);
+
+	move mv = to_move(PAWN,E2,E4);
+	store_hash_entry(&phtbl,key,100);
+	val = get_pawn_hash_entry(key,&stats);
+	assert(val == 100);
+
+	// now make move and reprobe
+	apply_move(&pos,mv,gundos);
+	uint64 key2 = build_pawn_key(&pos);
+	uint64 val2 = get_pawn_hash_entry(key2,&stats);
+	assert(val2==0);
+
+	// finally undo and reprobe
+	undo_last_move(&pos,gundos);
+	key2 = build_pawn_key(&pos);
+	assert(key==key2);
+	val2 = get_pawn_hash_entry(key2,&stats);
+	assert(val==val2);
+}
+
 void test_with_mate_score() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	set_pos(&pos,"5k2/6pp/p1qN4/1p1p4/3P4/2PKP2Q/PP3r2/3R4 b - -");
 
 	uint64 key = build_hash_key(&pos);
 	move mv = to_move(PAWN,C6,C4);
-	store_hash_entry(key,build_hash_val(LOWER_BOUND,5,CHECKMATE-3,mv));
+	store_hash_entry(&htbl,key,build_hash_val(LOWER_BOUND,5,CHECKMATE-3,mv));
 
 	search_stats stats;
 	uint64 val = get_hash_entry(key,&stats);
@@ -389,13 +420,13 @@ void test_with_mate_score() {
 }
 
 void test_transform_upper_bound_mate() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	set_pos(&pos,"r4rk1/ppp2ppp/2n5/2bqp3/8/P2PB3/1PP1NPPP/R2Q1RK1 w - -");
 
 	uint64 key = build_hash_key(&pos);
 	move mv = to_move(ROOK,F1,E1);
-	store_hash_entry(key,build_hash_val(UPPER_BOUND,5,CHECKMATE-3,mv));
+	store_hash_entry(&htbl,key,build_hash_val(UPPER_BOUND,5,CHECKMATE-3,mv));
 
 	search_stats stats;
 	uint64 val = get_hash_entry(key,&stats);
@@ -406,13 +437,13 @@ void test_transform_upper_bound_mate() {
 }
 
 void test_transform_exact_score_mate() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	set_pos(&pos,"3r2k1/p6p/2Q3p1/4q3/2P1p3/P3Pb2/1P3P1P/2K2BR1 b - - ");
 
 	uint64 key = build_hash_key(&pos);
 	move mv = to_move(ROOK,G8,F8);
-	store_hash_entry(key,build_hash_val(EXACT_SCORE,5,CHECKMATE-7,mv));
+	store_hash_entry(&htbl,key,build_hash_val(EXACT_SCORE,5,CHECKMATE-7,mv));
 
 	search_stats stats;
 	uint64 val = get_hash_entry(key,&stats);
@@ -424,13 +455,13 @@ void test_transform_exact_score_mate() {
 }
 
 void test_transform_lower_bound_mated() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	set_pos(&pos,"2rq1bk1/p4p1p/1p4p1/3b4/3B1Q2/8/P4PpP/3RR1K1 w - - ");
 
 	uint64 key = build_hash_key(&pos);
 	move mv = to_move(ROOK,D1,A1);
-	store_hash_entry(key,build_hash_val(LOWER_BOUND,8,-CHECKMATE+10,mv));
+	store_hash_entry(&htbl,key,build_hash_val(LOWER_BOUND,8,-CHECKMATE+10,mv));
 
 	search_stats stats;
 	uint64 val = get_hash_entry(key,&stats);
@@ -441,13 +472,13 @@ void test_transform_lower_bound_mated() {
 }
 
 void test_transform_exact_score_mated() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	set_pos(&pos,"4r1k1/5bpp/2p5/3pr3/8/1B3pPq/PPR2P2/2R2QK1 b - - ");
 
 	uint64 key = build_hash_key(&pos);
 	move mv = to_move(PAWN,G7,G6);
-	store_hash_entry(key,build_hash_val(EXACT_SCORE,10,-CHECKMATE+2,mv));
+	store_hash_entry(&htbl,key,build_hash_val(EXACT_SCORE,10,-CHECKMATE+2,mv));
 
 	search_stats stats;
 	uint64 val = get_hash_entry(key,&stats);
@@ -459,13 +490,13 @@ void test_transform_exact_score_mated() {
 }
 
 void test_transform_upper_bound_mated() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	set_pos(&pos,"r1b1k2r/1pp1q2p/p1n3p1/3QPp2/8/1BP3B1/P5PP/3R1RK1 w kq - ");
 
 	uint64 key = build_hash_key(&pos);
 	move mv = to_move(KING,G1,H1);
-	store_hash_entry(key,build_hash_val(UPPER_BOUND,7,-CHECKMATE+8,mv));
+	store_hash_entry(&htbl,key,build_hash_val(UPPER_BOUND,7,-CHECKMATE+8,mv));
 
 	search_stats stats;
 	uint64 val = get_hash_entry(key,&stats);
@@ -477,13 +508,13 @@ void test_transform_upper_bound_mated() {
 }
 
 void test_clear() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	set_pos(&pos,"3qrrk1/1pp2pp1/1p2bn1p/5N2/2P5/P1P3B1/1P4PP/2Q1RRK1 w - - ");
 
 	uint64 key = build_hash_key(&pos);
 	move mv = to_move(KNIGHT,F5,D4);
-	store_hash_entry(key,build_hash_val(UPPER_BOUND,4,-93,mv));
+	store_hash_entry(&htbl,key,build_hash_val(UPPER_BOUND,4,-93,mv));
 
 	search_stats stats;
 	uint64 val = get_hash_entry(key,&stats);
@@ -493,19 +524,19 @@ void test_clear() {
 	assert(get_hash_entry_score(val)==-93);
 	assert(get_hash_entry_depth(val)==4);
 
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	val = get_hash_entry(key,&stats);
 	assert(val==0);
 }
 
 void test_overwrite() {
-	clear_hash_table();
+	clear_hash_table(&htbl);
 	position pos;
 	set_pos(&pos,"8/k7/p7/3Qp2P/n1P5/3KP3/1q6/8 b - - ");
 
 	uint64 key = build_hash_key(&pos);
 	move mv = to_move(PAWN,E5,E4);
-	store_hash_entry(key,build_hash_val(LOWER_BOUND,5,1001,mv));
+	store_hash_entry(&htbl,key,build_hash_val(LOWER_BOUND,5,1001,mv));
 
 	search_stats stats;
 	uint64 val = get_hash_entry(key,&stats);
@@ -516,7 +547,7 @@ void test_overwrite() {
 	assert(get_hash_entry_depth(val)==5);
 
 	// overwrite with different score/depth
-	store_hash_entry(key,build_hash_val(LOWER_BOUND,6,900,mv));
+	store_hash_entry(&htbl,key,build_hash_val(LOWER_BOUND,6,900,mv));
 	val = get_hash_entry(key,&stats);
 	assert(val!=0);
 	assert(get_hash_entry_type(val)==LOWER_BOUND);
@@ -529,7 +560,7 @@ void test_overwrite() {
 
 	uint64 val2 = get_hash_entry(key2,&stats);
 	assert(val2==0);
-	store_hash_entry(key2,build_hash_val(LOWER_BOUND,7,800,mv));
+	store_hash_entry(&htbl,key2,build_hash_val(LOWER_BOUND,7,800,mv));
 	val2 = get_hash_entry(key2,&stats);
 	assert(val2 != 0);
 
@@ -547,6 +578,7 @@ void test_hash() {
 	test_hash_val_upper_bound();
 	test_hash_val_exact_score();
 	test_store_and_probe();
+	test_pawn_store_and_probe();
 	test_with_mate_score();
 	test_transform_upper_bound_mate();
 	test_transform_exact_score_mate();
