@@ -99,6 +99,23 @@ uint64 build_hash_val(hash_entry_t entry_type,int32 depth,int32 score,move mv) {
 	return val;
 }
 
+uint64 build_pawn_hash_val(int32 score) {
+	assert(abs(score) <= CHECKMATE);
+	assert(abs(score) <= 0xFFFF);
+
+	uint64 val = 1; // just so it's non-zero. this way we know there IS an entry in case
+	                // the score is 0
+
+	if (score >= 0) {
+		val |= ((uint64)score) << 1;
+	} else {
+		val |= ((uint64)-score) << 1;
+		val |= ((uint64)1) << 17;
+	}
+
+	return val;
+}
+
 hash_entry_t get_hash_entry_type(uint64 val) {
 
 	return (hash_entry_t)(val & 3);
@@ -112,6 +129,15 @@ int32 get_hash_entry_depth(uint64 val) {
 int32 get_hash_entry_score(uint64 val) {
 	int32 score = ((val >> 18) & 0xFFFF);
 	if ((val >> 34) & 1) {
+		return -score;
+	} else {
+		return score;
+	}
+}
+
+int32 get_pawn_hash_entry_score(uint64 val) {
+	int32 score = ((val >> 1) & 0xFFFF);
+	if ((val >> 17) & 1) {
 		return -score;
 	} else {
 		return score;
@@ -168,14 +194,14 @@ uint64 get_hash_entry(uint64 key,search_stats *stats) {
 
 uint64 get_pawn_hash_entry(uint64 key,search_stats *stats) {
 	assert(phtbl.tblptr);
-	stats->pawn_hash_probes++;
+	//stats->pawn_hash_probes++;
 	hash_entry *he = phtbl.tblptr + (key & phtbl.tblmask);
 	if (he->val != 0) {
 		if (he->key == key) { // do full signature match
-			stats->pawn_hash_hits++;
+			//stats->pawn_hash_hits++;
 			return he->val;
 		} else {
-			stats->pawn_hash_collisions++;
+			//stats->pawn_hash_collisions++;
 		}
 	}
 

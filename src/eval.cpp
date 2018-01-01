@@ -206,7 +206,7 @@ int32 eval_kings(position *p,int32_pair npmat) {
 	return score;
 }
 
-int32 eval_pawns(position *p) {
+int32 eval_pawns_no_hash(position *p) {
 	int32 score = 0;
 
 	uint64 pmap = p->white_pawns;
@@ -221,6 +221,24 @@ int32 eval_pawns(position *p) {
 		square_t sq = (square_t)get_lsb(pmap);
 		score -= eval_pawn(p,sq,false);
 		pmap ^= bb_squares[sq];
+	}
+
+	return score;
+}
+
+int32 eval_pawns(position *p) {
+
+	int32 score;
+
+	// try the pawn hash
+	uint64 val = get_pawn_hash_entry(p->pawn_key,0); // TODO
+	if (val != 0) {
+		score = get_pawn_hash_entry_score(val);
+		assert(score==eval_pawns_no_hash(p));
+	} else {
+		score = eval_pawns_no_hash(p);
+		// store (always replace)
+		store_hash_entry(&phtbl,p->pawn_key,build_pawn_hash_val(score));
 	}
 
 	return score;

@@ -383,9 +383,10 @@ void test_pawn_store_and_probe() {
 	assert(val==0);
 
 	move mv = to_move(PAWN,E2,E4);
-	store_hash_entry(&phtbl,key,100);
+	store_hash_entry(&phtbl,key,build_pawn_hash_val(-100));
 	val = get_pawn_hash_entry(key,&stats);
-	assert(val == 100);
+	assert(val > 0);
+	assert(get_pawn_hash_entry_score(val)==-100);
 
 	// now make move and reprobe
 	apply_move(&pos,mv,gundos);
