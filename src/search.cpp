@@ -248,7 +248,7 @@ int32 search_helper(position *pos,move_line *parent_pv,
 		} else {
 
 			// if this position is looking unpromising, just skip it
-			if (prune(pos,*mp,incheck,gives_check,ext,alpha,beta,depth)) {
+			if (prune(pos,*mp,incheck,gives_check,ext,alpha,beta,depth,stats)) {
 				undo_last_move(pos,undo_stack);
 				stats->prunes++;
 				moves_pruned++;

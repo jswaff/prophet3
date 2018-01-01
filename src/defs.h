@@ -318,9 +318,8 @@ bool is_stalemate(position *pos);
 bool is_zugzwang(position *pos);
 
 // prune
-bool prune(position *pos,move last_move,
-		bool incheck,bool gives_check,
-		int32 extensions,int32 alpha,int32 beta,int32 depth);
+bool prune(position *pos,move last_move,bool incheck,bool gives_check,
+		int32 extensions,int32 alpha,int32 beta,int32 depth,search_stats *stats);
 
 // search
 int32 search(position *p,move_line *pv,int32 alpha,int32 beta,int32 ply,
