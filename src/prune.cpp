@@ -22,7 +22,7 @@ bool prune(position *pos,move last_move,bool incheck,bool gives_check,
 		&& !is_capture(last_move) && get_promopiece(last_move)==NO_PIECE
 		&& !(get_piece(last_move)==PAWN && (get_rank(get_to_sq(last_move))==RANK_2 || get_rank(get_to_sq(last_move))==RANK_7))) {
 
-		int32 evalMat = -eval(pos,true);
+		int32 evalMat = -eval(pos,true,0);
 
 		return (depth < 2 && (evalMat + pawn_val*2 <= alpha))   // futility pruning
 			|| (depth < 3 && (evalMat + pawn_val*5 <= alpha)) ;  // extended futility pruning

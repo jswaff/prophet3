@@ -251,11 +251,12 @@ void test_qsearch_standpat_raises_alpha() {
 	reset_pos(&pos);
 
 	clear_hash_table(&htbl);
-	int32 score = eval(&pos,false);
-
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
 	stats.start_time=milli_timer();
 	stats.stop_time=stats.start_time + 10000;
+
+	int32 score = eval(&pos,false,&stats);
+
 	move moves[50];
 
 	abort_search = false;
@@ -325,7 +326,7 @@ void test_qsearch_beta_cutoff() {
 	stats.stop_time=stats.start_time + 10000;
 	move moves[50];
 
-	int32 score = eval(&pos,false);
+	int32 score = eval(&pos,false,&stats);
 	assert(abs(score) < queen_val);
 
 	abort_search = false;

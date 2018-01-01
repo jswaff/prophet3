@@ -337,7 +337,7 @@ int32 qsearch(position *pos,int32 alpha,int32 beta,int32 ply,int32 qply,
 
 	// TODO: try hash probe
 
-	int32 stand_pat = eval(pos,false);
+	int32 stand_pat = eval(pos,false,stats);
 	assert(test_eval_symmetry(stand_pat,pos));
 
 	if (stand_pat > alpha) {

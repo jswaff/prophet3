@@ -194,14 +194,14 @@ uint64 get_hash_entry(uint64 key,search_stats *stats) {
 
 uint64 get_pawn_hash_entry(uint64 key,search_stats *stats) {
 	assert(phtbl.tblptr);
-	//stats->pawn_hash_probes++;
+	stats->pawn_hash_probes++;
 	hash_entry *he = phtbl.tblptr + (key & phtbl.tblmask);
 	if (he->val != 0) {
 		if (he->key == key) { // do full signature match
-			//stats->pawn_hash_hits++;
+			stats->pawn_hash_hits++;
 			return he->val;
 		} else {
-			//stats->pawn_hash_collisions++;
+			stats->pawn_hash_collisions++;
 		}
 	}
 

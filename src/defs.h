@@ -198,7 +198,7 @@ bool is_draw_by_50(position *pos);
 
 // eval
 int32 piece_val(int32 pc);
-int32 eval(position *p,bool mat_only);
+int32 eval(position *p,bool mat_only,search_stats *stats);
 int32 eval_knight(position *p,square_t sq,bool wtm);
 int32 eval_bishop(position *p,square_t sq,bool wtm);
 int32 eval_rook(position *p,square_t sq,bool wtm);
