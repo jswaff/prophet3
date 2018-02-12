@@ -85,6 +85,7 @@ typedef struct {
 	uint64 white_pieces;
 	uint64 black_pieces;
 	uint64 hash_key;
+	uint64 pawn_key;
 } position;
 
 typedef struct {
@@ -101,8 +102,11 @@ typedef struct {
 	move_line last_pv;
 	move_line first_line_searched;
 	uint64 hash_probes;
+	uint64 pawn_hash_probes;
 	uint64 hash_hits;
+	uint64 pawn_hash_hits;
 	uint64 hash_collisions;
+	uint64 pawn_hash_collisions;
 	uint64 fail_highs;
 	uint64 fail_lows;
 	uint64 hash_exact_scores;
@@ -194,7 +198,7 @@ bool is_draw_by_50(position *pos);
 
 // eval
 int32 piece_val(int32 pc);
-int32 eval(position *p,bool mat_only);
+int32 eval(position *p,bool mat_only,search_stats *stats);
 int32 eval_knight(position *p,square_t sq,bool wtm);
 int32 eval_bishop(position *p,square_t sq,bool wtm);
 int32 eval_rook(position *p,square_t sq,bool wtm);
@@ -218,15 +222,19 @@ int32 extend(position *pos,move last_move,bool incheck);
 
 // hash
 uint64 build_hash_key(position *pos);
+uint64 build_pawn_key(position *pos);
 uint64 build_hash_val(hash_entry_t entry_type,int32 depth,int32 score,move mv);
+uint64 build_pawn_hash_val(int32 score);
 hash_entry_t get_hash_entry_type(uint64 val);
 int32 get_hash_entry_depth(uint64 val);
 int32 get_hash_entry_score(uint64 val);
+int32 get_pawn_hash_entry_score(uint64 val);
 move get_hash_entry_move(uint64 val);
-void init_hash_table(uint32 tblsize);
-void clear_hash_table();
+void init_hash_table(hash_table *tbl,uint32 tblsize);
+void clear_hash_table(hash_table *tbl);
 uint64 get_hash_entry(uint64 key,search_stats *stats);
-void store_hash_entry(uint64 key,uint64 val);
+uint64 get_pawn_hash_entry(uint64 key,search_stats *stats);
+void store_hash_entry(hash_table *tbl,uint64 key,uint64 val);
 
 // init
 void init();
@@ -310,9 +318,8 @@ bool is_stalemate(position *pos);
 bool is_zugzwang(position *pos);
 
 // prune
-bool prune(position *pos,move last_move,
-		bool incheck,bool gives_check,
-		int32 extensions,int32 alpha,int32 beta,int32 depth);
+bool prune(position *pos,move last_move,bool incheck,bool gives_check,
+		int32 extensions,int32 alpha,int32 beta,int32 depth,search_stats *stats);
 
 // search
 int32 search(position *p,move_line *pv,int32 alpha,int32 beta,int32 ply,

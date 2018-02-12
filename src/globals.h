@@ -18,6 +18,7 @@ extern dir_t direction_tbl[64][64];
 extern position gpos;
 extern undo gundos[UNDO_STACK_SIZE];
 extern hash_table htbl;
+extern hash_table phtbl;
 extern move killer1[MAX_PLY];
 extern move killer2[MAX_PLY];
 extern pthread_t think_thread;

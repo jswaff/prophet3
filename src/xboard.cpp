@@ -31,7 +31,8 @@ void handle_drawboard() {
 
 void handle_eval() {
 	pthread_join(think_thread,NULL);
-	int32 eval_score=eval(&gpos,false);
+	search_stats stats;
+	int32 eval_score=eval(&gpos,false,&stats);
 	print("eval: %d\n",eval_score);
 }
 

@@ -72,6 +72,7 @@ bool equal_pos(position* p1,position* p2,bool strict) {
 
 	// if all that is equal the hash keys should be too
 	assert(p1->hash_key==p2->hash_key);
+	assert(p1->pawn_key==p2->pawn_key);
 
 	return true;
 }
@@ -87,6 +88,7 @@ void add_piece(position* p,int32 piece,square_t sq) {
 		p->white_pieces |= bb_sq;
 		if (piece==PAWN) {
 			p->white_pawns |= bb_sq;
+			p->pawn_key ^= zkeys.pieces[PAWN][WHITE][sq];
 		} else if (piece==KNIGHT) {
 			p->white_knights |= bb_sq;
 		} else if (piece==BISHOP) {
@@ -102,6 +104,7 @@ void add_piece(position* p,int32 piece,square_t sq) {
 		p->black_pieces |= bb_sq;
 		if (piece==-PAWN) {
 			p->black_pawns |= bb_sq;
+			p->pawn_key ^= zkeys.pieces[PAWN][BLACK][sq];
 		} else if (piece==-KNIGHT) {
 			p->black_knights |= bb_sq;
 		} else if (piece==-BISHOP) {
@@ -127,6 +130,7 @@ piece_t remove_piece(position* p,square_t sq) {
 		p->white_pieces ^= bb_sq;
 		if (piece==PAWN) {
 			p->white_pawns ^= bb_sq;
+			p->pawn_key ^= zkeys.pieces[PAWN][WHITE][sq];
 		} else if (piece==KNIGHT) {
 			p->white_knights ^= bb_sq;
 		} else if (piece==BISHOP) {
@@ -143,6 +147,7 @@ piece_t remove_piece(position* p,square_t sq) {
 		p->black_pieces ^= bb_sq;
 		if (piece==-PAWN) {
 			p->black_pawns ^= bb_sq;
+			p->pawn_key ^= zkeys.pieces[PAWN][BLACK][sq];
 		} else if (piece==-KNIGHT) {
 			p->black_knights ^= bb_sq;
 		} else if (piece==-BISHOP) {
@@ -362,6 +367,7 @@ bool set_pos(position *pos,const char *fen) {
 	if (pos->player==BLACK) pos->move_counter++;
 
 	pos->hash_key = build_hash_key(pos);
+	pos->pawn_key = build_pawn_key(pos);
 
 	return true;
 }
@@ -442,6 +448,7 @@ void flip_board(position *pos) {
 	}
 
 	pos->hash_key = build_hash_key(pos);
+	pos->pawn_key = build_pawn_key(pos);
 	assert(test_pos_consistency(pos));
 }
 

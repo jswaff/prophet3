@@ -248,7 +248,7 @@ int32 search_helper(position *pos,move_line *parent_pv,
 		} else {
 
 			// if this position is looking unpromising, just skip it
-			if (prune(pos,*mp,incheck,gives_check,ext,alpha,beta,depth)) {
+			if (prune(pos,*mp,incheck,gives_check,ext,alpha,beta,depth,stats)) {
 				undo_last_move(pos,undo_stack);
 				stats->prunes++;
 				moves_pruned++;
@@ -292,7 +292,7 @@ int32 search_helper(position *pos,move_line *parent_pv,
 
 		if (score > alpha) {
 			if (score >= beta) {
-				store_hash_entry(pos->hash_key,build_hash_val(LOWER_BOUND,depth,score,*mp));
+				store_hash_entry(&htbl,pos->hash_key,build_hash_val(LOWER_BOUND,depth,score,*mp));
 				if (!is_capture(*mp) && !get_promopiece(*mp)) {
 					assert(get_move_score(mp)==0);
 					killer2[ply] = killer1[ply];
@@ -312,7 +312,7 @@ int32 search_helper(position *pos,move_line *parent_pv,
 	alpha = adjust_final_score_for_mates(pos,alpha,moves_searched,ply);
 
 	hash_entry_t het = best_mv==0 ? UPPER_BOUND : EXACT_SCORE;
-	store_hash_entry(pos->hash_key,build_hash_val(het,depth,alpha,best_mv));
+	store_hash_entry(&htbl,pos->hash_key,build_hash_val(het,depth,alpha,best_mv));
 
 
 	return alpha;
@@ -337,7 +337,7 @@ int32 qsearch(position *pos,int32 alpha,int32 beta,int32 ply,int32 qply,
 
 	// TODO: try hash probe
 
-	int32 stand_pat = eval(pos,false);
+	int32 stand_pat = eval(pos,false,stats);
 	assert(test_eval_symmetry(stand_pat,pos));
 
 	if (stand_pat > alpha) {

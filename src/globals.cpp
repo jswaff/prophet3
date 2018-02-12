@@ -15,6 +15,7 @@ dir_t direction_tbl[64][64];
 position gpos;
 undo gundos[UNDO_STACK_SIZE];
 hash_table htbl;
+hash_table phtbl;
 move killer1[MAX_PLY];
 move killer2[MAX_PLY];
 pthread_t think_thread;
