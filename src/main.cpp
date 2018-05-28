@@ -20,7 +20,7 @@ uint32 pawn_hash_size = 0;
 
 
 void print_greeting() {
-	print("Hello!  This is the Prophet Chess Engine v3.0 20171231\n");
+	print("Hello!  This is the Prophet Chess Engine v3.0 20180526\n");
 	print("James Swafford, 2011-2018\n\n");
 }
 

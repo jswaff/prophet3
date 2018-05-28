@@ -34,7 +34,7 @@ extern uint64 bb_rays[64][8];
 
 //// constants
 
-const uint32 default_hash_size = 134217728; // default 128 MB
+const uint32 default_hash_size = 134217728 * 2; // default 256 MB
 
 const int fliprank[64] =
 	{ A1,B1,C1,D1,E1,F1,G1,H1,
