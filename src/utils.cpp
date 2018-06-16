@@ -415,3 +415,4 @@ uint64 random64() {
 	uint64 r2 = random32();
 	return ((r1<<32)|r2);
 }
+
