@@ -114,6 +114,40 @@ void handle_level() {
 	print("# increment: %d\n",increment);
 }
 
+
+/**
+ * memory N
+ *
+ * This command informs the engine on how much memory it is allowed to use maximally, in MegaBytes.
+ * On receipt of this command, the engine should adapt the size of its hash tables accordingly.
+ * This command does only fix the total memory use, the engine has to decide for itself (or be
+ * configured by the user by other means) how to divide up the available memory between the various
+ * tables it wants to use (e.g. main hash, pawn hash, tablebase cache, bitbases). This command will
+ * only be sent to engines that have requested it through the memory feature, and only at the start
+ * of a game, as the first of the commands to relay engine option settings just before each "new"
+ * command.
+ */
+int32 last_mem_in_mb = 0;
+void handle_memory() {
+	int32 mem_in_mb;
+	if (scanf("%d",&mem_in_mb)==EOF) return;
+
+	print("# received memory command, N=%d\n",mem_in_mb);
+	if (mem_in_mb != last_mem_in_mb) {
+		free(htbl.tblptr);
+		free(phtbl.tblptr);
+
+		uint32 total_hash_size = mem_in_mb * 1024 * 1024; // convert to bytes
+
+		init_hash_table(&htbl,total_hash_size / 2);
+		init_hash_table(&phtbl,total_hash_size / 2);
+
+		last_mem_in_mb = mem_in_mb;
+	} else {
+		print("# memory usage hasn't changed, skipping free/malloc\n");
+	}
+}
+
 /**
  * If the engine is thinking, it will immediately stop and move.
  */
@@ -234,7 +268,7 @@ void handle_protover() {
 		}
 
 		print("feature analyze=0 black=0 colors=0 cores=0 ping=1 draw=0 debug=1 edit=0 ics=1\n");
-		print("feature level=0 name=1 nps=0 memory=0 playother=1 pause=0 resume=0 reuse=1 san=0\n");
+		print("feature level=0 name=1 nps=0 memory=1 playother=1 pause=0 resume=0 reuse=1 san=0\n");
 		print("feature setboard=1 sigint=0 sigterm=0 smp=0 st=0 time=1 usermove=1\n");
 		print("feature white=0 variants=\"normal\"\n");
 		print("feature done=1\n"); // must be last
@@ -244,10 +278,13 @@ void handle_protover() {
 void handle_quit() {
 	abort_search = true;
 	pthread_join(think_thread,NULL);
-	print("bye...\n");
 	if (book_db != 0) {
 		sqlite3_close(book_db);
 	}
+	free(htbl.tblptr);
+	free(phtbl.tblptr);
+
+	print("bye...\n");
 	exit(0);
 }
 
@@ -397,6 +434,7 @@ struct function_table_entry function_table[] = {
 		{"hint", no_op},
 		{"ics", no_op_with_arg},
 		{"level", handle_level},
+		{"memory", handle_memory},
 		{"name", no_op_with_arg},
 		{"new", handle_new},
 		{"nps", no_op},
