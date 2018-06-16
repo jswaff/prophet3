@@ -48,7 +48,7 @@ directly from the command line, and not using a Winboard compatible GUI or test 
 -hash=512 -phash=256
 ``` 
 
-The above command would allocate 512 MB to the table used in the main search,
+The above arguments would allocate 512 MB to the table used in the main search,
 and 256 MB to the pawn hash table, for a total of 512 MB + 256 MB = 768 MB.  
  
 Winboard / XBoard has an option to specify the maximum memory usage, and Prophet does
