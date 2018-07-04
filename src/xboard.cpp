@@ -23,7 +23,6 @@ int32 my_time = 0;
 int32 increment = 0;
 bool post = false;
 
-
 void handle_drawboard() {
 	pthread_join(think_thread,NULL);
 	draw_board(&gpos);

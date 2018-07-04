@@ -61,7 +61,7 @@ void* think_helper(void *ptr) {
 	int32 search_time = get_search_time(td.remaining_time,td.increment);
 	print("# time remaining in ms: %d, inc=%d, search_time=%d\n",td.remaining_time,td.increment,search_time);
 
-	move_line pv = iterate(&td.search_pos,search_time,td.max_depth,true,td.show_thinking);
+	move_line pv = iterate(&td.search_pos,search_time,td.max_depth,td.show_thinking,false);
 
 	// sanity check - the global position shouldn't have changed
 	assert(equal_pos(&td.search_pos,&gpos,true));
@@ -88,13 +88,14 @@ void* think_helper(void *ptr) {
  * abort_search should be set before calling this method.
  */
 move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
-		bool allow_early_stop,bool show_thinking) {
+		bool show_thinking,bool test_suite_mode) {
 
 	move_line pv; pv.n=0;
 
-	if (pos->move_counter <= 30) {
+	if (!test_suite_mode && pos->move_counter <= 30) {
 		move book_mv = probe_book(pos);
 		if (book_mv) {
+			print("# book move\n");
 			pv.mv[0] = book_mv;
 			pv.n = 1;
 			return pv;
@@ -105,7 +106,7 @@ move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
 	move *endp = gen_legal_moves(search_moves,pos,true,true);
 	int num_mvs = num_moves(search_moves,endp,true,true);
 	print("# position has %d move(s)\n",num_mvs);
-	if (num_mvs==1) {
+	if (!test_suite_mode && num_mvs==1) {
 		best_at_top(search_moves,endp);
 		pv.mv[0] = search_moves[0];
 		pv.n = 1;
@@ -158,7 +159,7 @@ move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
 			stop_searching = true;
 		}
 		int32 elapsed_time = milli_timer() - stats.start_time;
-		if (allow_early_stop && elapsed_time > (max_search_time / 2)) {
+		if (!test_suite_mode && elapsed_time > (max_search_time / 2)) {
 			stop_searching = true;
 		}
 	} while (!stop_searching);

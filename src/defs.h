@@ -359,7 +359,7 @@ void test_suite(char *tsfile,int32 tstime);
 // think
 void think(int32 max_depth,int32 remaining_time,int32 increment,bool show_thinking);
 move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
-		bool allow_early_stop,bool show_thinking);
+		bool show_thinking,bool test_suite_mode);
 
 // time
 int32 milli_timer();

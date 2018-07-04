@@ -84,7 +84,7 @@ void test_suite(char *tsfile,int32 tstime) {
 		clear_hash_table(&htbl);
 		clear_hash_table(&phtbl);
 
-		move_line pv = iterate(&pos,tstime*1000,0,false,true);
+		move_line pv = iterate(&pos,tstime*1000,0,true,true);
 		num_total++;
 
 		// did we get it right?
