@@ -23,6 +23,28 @@ int32 my_time = 0;
 int32 increment = 0;
 bool post = false;
 
+void handle_bk() {
+	if (book_db==0) {
+		print("\tbook not enabled\n");
+	} else {
+		move_freq_pair mfp[300];
+		int32 num_book_moves = get_book_moves(mfp,&gpos);
+
+		if (num_book_moves > 0) {
+			char move_buffer[8];
+			for (int i=0;i<num_book_moves;i++) {
+				if (mfp[i].freq > 0) {
+					move_to_str(mfp[i].mv,move_buffer);
+					print("\t%s, freq: %d\n",move_buffer,mfp[i].freq);
+				}
+			}
+		} else {
+			print("\tno book moves found\n");
+		}
+	}
+	print("\n"); // blank line required by protocol
+}
+
 void handle_drawboard() {
 	pthread_join(think_thread,NULL);
 	draw_board(&gpos);
@@ -420,7 +442,7 @@ struct function_table_entry {
 struct function_table_entry function_table[] = {
 		{"accepted", no_op_with_arg},
 		{"analyze", no_op},
-		{"bk", no_op},
+		{"bk",handle_bk},
 		{"computer", no_op},
 		{"drawboard", handle_drawboard},  // not xboard!
 		{"db", handle_drawboard},         // not xboard!

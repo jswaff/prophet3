@@ -12,10 +12,6 @@
 #include "defs.h"
 #include "globals.h"
 
-typedef struct {
-	move mv;
-	int32 freq;
-} move_freq_pair;
 
 typedef struct {
 	move_freq_pair* mfp;
@@ -194,45 +190,13 @@ int64 build_book_key(position *p) {
 }
 
 move probe_book(position *p) {
-	if (book_db==0) {
-		print("# can't probe - no book database\n");
-		return 0;
-	}
-	print("# probing book...\n");
-
-	long long key = build_book_key(p);
-
-	char sql[128];
-	sprintf(sql,"select fromsq,tosq,frequency,wins,losses,draws from book_moves where key=%lld",key);
-
-	char *err_msg = 0;
-
-	move moves[300],*endp;
-	endp = gen_legal_moves(moves,p,true,true);
-
 	move_freq_pair mfp[300];
-	int mv_ind=0;
-	for (move *mp=moves;mp<endp;mp++) {
-		if (*mp) {
-			mfp[mv_ind].mv=*mp;
-			mfp[mv_ind].freq=0;
-			mv_ind++;
-		}
-	}
-	assert(mv_ind<300);
+	int32 num_book_moves = get_book_moves(mfp,p);
 
-	mfpn_type mfpn;
-	mfpn.mfp = &mfp[0];
-	mfpn.n = mv_ind;
-	int rc = sqlite3_exec(book_db,sql,get_moves_callback,(void*)&mfpn,&err_msg);
-	if( rc != SQLITE_OK ){
-		error("SQL error: %s\n",err_msg);
-		sqlite3_free(err_msg);
-	}
-
+	// get the total frequency of all book moves
 	int32 total_freq=0;
 	char move_buffer[8];
-	for (int i=0;i<mv_ind;i++) {
+	for (int i=0;i<num_book_moves;i++) {
 		if (mfp[i].freq > 0) {
 			move_to_str(mfp[i].mv,move_buffer);
 			print("# book move: %s, freq: %d\n",move_buffer,mfp[i].freq);
@@ -252,7 +216,7 @@ move probe_book(position *p) {
 
 	int sum_freq = 0;
 	move selected_mv = 0;
-	for (int i=0;i<mv_ind;i++) {
+	for (int i=0;i<num_book_moves;i++) {
 		if (mfp[i].freq > 0) {
 			sum_freq += mfp[i].freq;
 			if (sum_freq >= random_weight) {
@@ -265,4 +229,44 @@ move probe_book(position *p) {
 	}
 
 	return selected_mv;
+}
+
+int32 get_book_moves(move_freq_pair *mfp,position *p) {
+	if (book_db==0) {
+		print("# can't probe - no book database\n");
+		return 0;
+	}
+
+	print("# probing book...\n");
+
+	long long key = build_book_key(p);
+
+	char sql[128];
+	sprintf(sql,"select fromsq,tosq,frequency,wins,losses,draws from book_moves where key=%lld",key);
+
+	char *err_msg = 0;
+
+	move moves[300],*endp;
+	endp = gen_legal_moves(moves,p,true,true);
+
+	int mv_ind=0;
+	for (move *mp=moves;mp<endp;mp++) {
+		if (*mp) {
+			mfp[mv_ind].mv=*mp;
+			mfp[mv_ind].freq=0;
+			mv_ind++;
+		}
+	}
+	assert(mv_ind<300);
+
+	mfpn_type mfpn;
+	mfpn.mfp = &mfp[0];
+	mfpn.n = mv_ind;
+	int rc = sqlite3_exec(book_db,sql,get_moves_callback,(void*)&mfpn,&err_msg);
+	if( rc != SQLITE_OK ){
+		error("SQL error: %s\n",err_msg);
+		sqlite3_free(err_msg);
+	}
+
+	return mv_ind;
 }

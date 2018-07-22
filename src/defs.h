@@ -152,6 +152,11 @@ typedef struct {
 	move *currentp;
 } move_order_dto;
 
+typedef struct {
+	move mv;
+	int32 freq;
+} move_freq_pair;
+
 typedef square_t (*dirFuncType)(square_t);
 
 // i/o
@@ -186,6 +191,7 @@ uint64 isolate_lsb_bit(uint64 mask,uint32 bit_pos);
 void init_bitboards();
 
 // book
+int32 get_book_moves(move_freq_pair *mfp,position *p);
 int32 open_book_db(char *path);
 int64 build_book_key(position *p);
 move probe_book(position *p);
