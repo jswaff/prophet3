@@ -25,7 +25,7 @@ void* think_helper(void *ptr);
 think_data td;
 
 search_stats build_search_stats_dto(int32 max_search_time);
-void print_search_summary(search_stats *stats);
+void print_search_summary(int last_depth,search_stats *stats);
 
 move search_moves[MOVE_STACK_SIZE];
 undo search_undos[UNDO_STACK_SIZE];
@@ -167,7 +167,7 @@ move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
 	assert(pv.n > 0);
 	assert(is_line_valid(&pv,pos));
 
-	print_search_summary(&stats);
+	print_search_summary(depth,&stats);
 
 
 	return pv;
@@ -200,13 +200,14 @@ search_stats build_search_stats_dto(int32 max_search_time) {
 	return stats;
 }
 
-void print_search_summary(search_stats *stats) {
+void print_search_summary(int last_depth,search_stats *stats) {
 	uint64 total_nodes = stats->nodes + stats->qnodes;
 
 	float interior_pct = stats->nodes / (total_nodes/100.0);
 	float qnode_pct = stats->qnodes / (total_nodes/100.0);
 
 	print("\n");
+	print("# depth: %d\n",last_depth);
 	print("# nodes: %lluk, interior: %lluk (%.2f%%), quiescence: %lluk (%.2f%%)\n",
 			total_nodes/1000,stats->nodes/1000,interior_pct,stats->qnodes/1000,qnode_pct);
 
