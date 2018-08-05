@@ -12,7 +12,6 @@
 #include <sqlite3.h>
 #include "defs.h"
 
-extern bool abort_search;
 extern sqlite3* book_db;
 extern dir_t direction_tbl[64][64];
 extern position gpos;

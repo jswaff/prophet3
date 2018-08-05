@@ -226,12 +226,12 @@ int32 eval_pawns_no_hash(position *p) {
 	return score;
 }
 
-int32 eval_pawns(position *p,search_stats *stats) {
+int32 eval_pawns(position *p) {
 
 	int32 score;
 
 	// try the pawn hash
-	uint64 val = get_pawn_hash_entry(p->pawn_key,stats);
+	uint64 val = get_hash_entry(&phtbl,p->pawn_key);
 	if (val != 0) {
 		score = get_pawn_hash_entry_score(val);
 		assert(score==eval_pawns_no_hash(p));
@@ -332,7 +332,7 @@ int32_pair eval_pawn_material(position *p) {
 	return score;
 }
 
-int32 eval(position *p,bool mat_only,search_stats *stats) {
+int32 eval(position *p,bool mat_only) {
 	int32 score = 0;
 
 	int32_pair npmat = eval_nonpawn_material(p);
@@ -342,7 +342,7 @@ int32 eval(position *p,bool mat_only,search_stats *stats) {
 	score += pmat.val1 - pmat.val2;
 
 	if (!mat_only) {
-		score += eval_pawns(p,stats);
+		score += eval_pawns(p);
 		score += eval_knights(p);
 		score += eval_bishops(p);
 		score += eval_rooks(p);

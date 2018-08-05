@@ -9,7 +9,6 @@
 #include "defs.h"
 #include "sqlite3.h"
 
-bool abort_search = false;
 sqlite3* book_db;
 dir_t direction_tbl[64][64];
 position gpos;

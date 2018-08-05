@@ -14,8 +14,7 @@
 void test_start_pos_is_0() {
 	position pos;
 	reset_pos(&pos);
-	search_stats stats;
-	int32 score=eval(&pos,false,&stats);
+	int32 score=eval(&pos,false);
 	assert(score==0);
 }
 
@@ -38,43 +37,41 @@ void test_eval_knight() {
 
 void test_eval_bishop() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"6k1/3B4/8/8/8/8/8/K7 w - - 0 1");
-	assert(eval(&pos,false,&stats)==bishop_val + bishop_pst[D7]);
+	assert(eval(&pos,false)==bishop_val + bishop_pst[D7]);
 
 	set_pos(&pos,"6k1/8/8/3B4/8/8/8/K7 w - - 0 1");
-	assert(eval(&pos,false,&stats)==bishop_val + bishop_pst[D5]);
+	assert(eval(&pos,false)==bishop_val + bishop_pst[D5]);
 }
 
 void test_eval_rook() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"6k1/3R4/8/8/8/8/8/3K4 w - - 0 1");
-	int32 score = eval(&pos,false,&stats);
+	int32 score = eval(&pos,false);
 	assert(score==rook_val + rook_on_7th + rook_open_file);
 
 	set_pos(&pos,"6k1/3RR3/8/8/8/8/8/3K4 w - - 0 1");
-	score = eval(&pos,false,&stats);
+	score = eval(&pos,false);
 	assert(score==rook_val*2 + rook_on_7th*2 + connected_majors_on_7th + rook_open_file*2);
 
 	set_pos(&pos,"6k1/3RRr2/8/8/8/8/8/3K4 w - - 0 1");
-	score = eval(&pos,false,&stats);
+	score = eval(&pos,false);
 	// white has two rooks on open files and black one, so net 1 for white
 	assert(score==rook_val + rook_on_7th*2 + connected_majors_on_7th + rook_open_file);
 
 	set_pos(&pos,"6k1/3RRr2/8/8/8/8/r7/3K4 w - - 0 1");
-	score = eval(&pos,false,&stats);
+	score = eval(&pos,false);
 	assert(score==rook_on_7th + connected_majors_on_7th);
 
 	set_pos(&pos,"6k1/3RRr2/8/8/8/r7/8/3K4 w - - 0 1");
-	score = eval(&pos,false,&stats);
+	score = eval(&pos,false);
 	// deduct for black for rook on A file
 	assert(score==rook_on_7th*2 + connected_majors_on_7th - rook_pst[fliprank[A3]]);
 
 	set_pos(&pos,"6k1/8/8/8/8/8/qr6/7K b - - 0 1");
-	score = eval(&pos,false,&stats);
+	score = eval(&pos,false);
 	assert(score==queen_val + rook_val + rook_on_7th*2 + connected_majors_on_7th
 			+ rook_open_file
 			+ queen_pst[A2]
@@ -83,28 +80,26 @@ void test_eval_rook() {
 
 void test_eval_rook_on_7th() {
 	position pos;
-	search_stats stats;
 	set_pos(&pos,"7k/8/8/8/8/8/r7/7K w - - 0 1");
 	int32_pair npmat = eval_nonpawn_material(&pos);
 	assert(npmat.val1==0);
 	assert(npmat.val2==rook_val);
 
-	assert(eval(&pos,false,&stats)==-rook_val - rook_on_7th - rook_open_file);
+	assert(eval(&pos,false)==-rook_val - rook_on_7th - rook_open_file);
 
 	// move king out
 	set_pos(&pos,"7k/8/8/8/8/7K/r7/8 w - - 0 1");
-	assert(eval(&pos,false,&stats)==-rook_val - rook_open_file);
+	assert(eval(&pos,false)==-rook_val - rook_open_file);
 
 	// flipped
 	set_pos(&pos,"7k/8/8/8/8/7K/r7/8 b - - 0 1");
-	assert(eval(&pos,false,&stats)==rook_val  + rook_open_file);
+	assert(eval(&pos,false)==rook_val  + rook_open_file);
 }
 
 void test_eval_connected_majors_7th() {
 	position pos;
-	search_stats stats;
 	set_pos(&pos,"7k/R2R4/8/8/8/8/8/7K w - - 0 1");
-	assert(eval(&pos,false,&stats)==rook_val*2 + rook_on_7th*2 + connected_majors_on_7th
+	assert(eval(&pos,false)==rook_val*2 + rook_on_7th*2 + connected_majors_on_7th
 			+ rook_open_file*2);
 
 	set_pos(&pos,"7k/R2RQ3/8/8/8/8/8/7K w - - 0 1");
@@ -116,48 +111,45 @@ void test_eval_connected_majors_7th() {
 			           + king_safety_pawn_far_away // g file
 			           + (king_safety_pawn_far_away/2), // h file
 			           rook_val*2+queen_val);
-	assert(eval(&pos,false,&stats)==expected);
+	assert(eval(&pos,false)==expected);
 
 	// flip it
 	set_pos(&pos,"7k/R2QR3/8/8/8/8/8/7K b - - 0 1");
-	assert(eval(&pos,false,&stats)==-expected);
+	assert(eval(&pos,false)==-expected);
 }
 
 void test_eval_rook_open_file() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"3r3k/8/8/8/8/8/8/7K b - - 0 1");
-	assert(eval(&pos,false,&stats)==rook_val + rook_open_file);
+	assert(eval(&pos,false)==rook_val + rook_open_file);
 
 	set_pos(&pos,"3r3k/3r4/8/8/8/8/8/7K b - - 0 1");
-	assert(eval(&pos,false,&stats)==rook_val*2 + rook_open_file*2);
+	assert(eval(&pos,false)==rook_val*2 + rook_open_file*2);
 
 	set_pos(&pos,"3r3k/8/3p4/8/8/8/8/7K b - - 0 1");
-	assert(eval(&pos,false,&stats)==rook_val+pawn_val +passed_pawn+isolated_pawn
+	assert(eval(&pos,false)==rook_val+pawn_val +passed_pawn+isolated_pawn
 			+ pawn_pst[fliprank[D6]]);
 }
 
 void test_eval_rook_half_open_file() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"8/2P5/8/2R5/K7/8/7k/8 w - - 0 1");
-	assert(eval(&pos,false,&stats)==rook_val + pawn_val  + passed_pawn + isolated_pawn
+	assert(eval(&pos,false)==rook_val + pawn_val  + passed_pawn + isolated_pawn
 			+ pawn_pst[C7]);
 
 	set_pos(&pos,"8/2p5/8/2R5/K7/8/7k/8 w - - 0 1");
-	assert(eval(&pos,false,&stats)==rook_val-pawn_val -passed_pawn-isolated_pawn
+	assert(eval(&pos,false)==rook_val-pawn_val -passed_pawn-isolated_pawn
 			+ pawn_pst[fliprank[C7]]
 			+ rook_half_open_file);
 }
 
 void test_eval_queen() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"3kq3/8/8/8/8/8/8/3K4 b - - 0 1");
-	assert(eval(&pos,false,&stats)==queen_val + queen_pst[fliprank[E8]]);
+	assert(eval(&pos,false)==queen_val + queen_pst[fliprank[E8]]);
 	int32_pair npmat = eval_nonpawn_material(&pos);
 	assert(npmat.val1==0);
 	assert(npmat.val2==queen_val);
@@ -165,7 +157,6 @@ void test_eval_queen() {
 
 void test_king_pst() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"rnbqkbnr/pppppppp/8/8/3P4/3BPN2/PPP2PPP/RNBQR1K1 w - - 0 1");
 	int32_pair npmat = eval_nonpawn_material(&pos);
@@ -174,7 +165,7 @@ void test_king_pst() {
 	int32_pair pmat = eval_pawn_material(&pos);
 	assert(0==pmat.val1-pmat.val2);
 
-	int32 score = eval(&pos,false,&stats);
+	int32 score = eval(&pos,false);
 
 	int32 tropism_delta = knight_tropism * distance(F3,pos.black_king)
 		- knight_tropism * distance(G1,pos.black_king);
@@ -190,7 +181,6 @@ void test_king_pst() {
 
 void test_king_endgame_pst() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"8/8/8/4k3/8/8/8/RNB2K2 w - - 0 1");
 
@@ -203,7 +193,7 @@ void test_king_endgame_pst() {
 	        + knight_tropism * distance(B1,pos.black_king)
 	        + king_endgame_pst[F1] - king_pst[E5]
 	        - eval_scale(king_safety_middle_open_file,rook_val+knight_val+bishop_val);
-	assert(expected==eval(&pos,false,&stats));
+	assert(expected==eval(&pos,false));
 
 	// by removing a bishop both sides should be evaluated as in the endgame
 	set_pos(&pos,"8/8/8/4k3/8/8/8/RN3K2 b - - 0 1");
@@ -213,74 +203,70 @@ void test_king_endgame_pst() {
 			- knight_tropism * distance(B1,pos.black_king)
 			- king_endgame_pst[F1]
 			+ king_endgame_pst[E5];
-	assert(expected==eval(&pos,false,&stats));
+	assert(expected==eval(&pos,false));
 }
 
 void test_king_safety_middle_files() {
 	position pos;
-	search_stats stats;
 
 	// initial position then e3... no penalty
 	set_pos(&pos,"rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-	int32 score = eval(&pos,false,&stats);
+	int32 score = eval(&pos,false);
 	assert(score==pawn_pst[E3]-pawn_pst[E2]);
 
 	// open file for both, so still no penalty
 	set_pos(&pos,"rnbqkbnr/pppp1ppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-	score = eval(&pos,false,&stats);
+	score = eval(&pos,false);
 	assert(score==0);
 
 	// remove both queens.  open e file.  put black king on d8
 	set_pos(&pos,"rnbk1bnr/pppp1ppp/8/8/8/8/PPPP1PPP/RNB1KBNR b KQ - 0 1");
-	score = eval(&pos,false,&stats);
+	score = eval(&pos,false);
 	assert(score== -eval_scale(king_safety_middle_open_file,
 			rook_val*2 + knight_val*2 + bishop_val*2) + king_pst[fliprank[D8]]);
 }
 
 void test_king_safety_kingside() {
 	position pos;
-	search_stats stats;
 
 	// no pawns advanced
 	set_pos(&pos,"rnbq1rk1/pppppppp/8/8/8/8/PPPPPPPP/RNBQ1RK1 w kq - 0 1");
-	assert(eval(&pos,false,&stats)==0);
+	assert(eval(&pos,false)==0);
 
 	// white pawn on f4
 	set_pos(&pos,"rnbq1rk1/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQ1RK1 w kq - 0 1");
-	assert(eval(&pos,false,&stats)==pawn_pst[F3]-pawn_pst[F2]
+	assert(eval(&pos,false)==pawn_pst[F3]-pawn_pst[F2]
 		+ eval_scale(king_safety_pawn_one_away,rook_val*2+knight_val+bishop_val+queen_val));
 
 	// white pawn on g4
 	set_pos(&pos,"rnbq1rk1/pppppppp/8/8/6P1/8/PPPPPP1P/RNBQ1RK1 w kq - 0 1");
-	assert(eval(&pos,false,&stats)==pawn_pst[G4]-pawn_pst[G2]+eval_scale(king_safety_pawn_two_away,rook_val*2+knight_val+bishop_val+queen_val));
+	assert(eval(&pos,false)==pawn_pst[G4]-pawn_pst[G2]+eval_scale(king_safety_pawn_two_away,rook_val*2+knight_val+bishop_val+queen_val));
 
 	// black pawn on h4
 	set_pos(&pos,"rnbq1rk1/ppppppp1/8/8/7p/8/PPPPPPPP/RNBQ1RK1 b KQkq - 0 1");
-	assert(eval(&pos,false,&stats)==pawn_pst[fliprank[H4]]-pawn_pst[fliprank[H7]]
+	assert(eval(&pos,false)==pawn_pst[fliprank[H4]]-pawn_pst[fliprank[H7]]
 	     +eval_scale(king_safety_pawn_far_away/2,rook_val*2+knight_val+bishop_val+queen_val));
 }
 
 void test_king_safety_queenside() {
 	position pos;
-	search_stats stats;
 
 	// white pawn on c3
 	set_pos(&pos,"1krq1bnr/pppppppp/8/8/8/2P5/PP1PPPPP/1KRQ1BNR w kq - 0 1");
-	assert(eval(&pos,false,&stats)==pawn_pst[C3]-pawn_pst[C2]+eval_scale(king_safety_pawn_one_away,rook_val*2+queen_val+bishop_val+knight_val));
+	assert(eval(&pos,false)==pawn_pst[C3]-pawn_pst[C2]+eval_scale(king_safety_pawn_one_away,rook_val*2+queen_val+bishop_val+knight_val));
 
 	// white pawn on b4
 	set_pos(&pos,"1krq1bnr/pppppppp/8/8/1P6/8/P1PPPPPP/1KRQ1BNR w kq - 0 1");
-	assert(eval(&pos,false,&stats)==pawn_pst[B4]-pawn_pst[B2]+eval_scale(king_safety_pawn_two_away,rook_val*2+queen_val+bishop_val+knight_val));
+	assert(eval(&pos,false)==pawn_pst[B4]-pawn_pst[B2]+eval_scale(king_safety_pawn_two_away,rook_val*2+queen_val+bishop_val+knight_val));
 
 	// black pawn on a4
 	set_pos(&pos,"1krq1bnr/1ppppppp/8/8/p7/8/PPPPPPPP/1KRQ1BNR b kq - 0 1");
-	assert(eval(&pos,false,&stats)==pawn_pst[fliprank[A4]]-pawn_pst[fliprank[A7]]
+	assert(eval(&pos,false)==pawn_pst[fliprank[A4]]-pawn_pst[fliprank[A7]]
        +eval_scale(king_safety_pawn_far_away/2,rook_val*2+queen_val+bishop_val+knight_val));
 }
 
 void test_double_and_isolated_pawns() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"k7/p1p3p1/3p3p/1P5P/1PP1P3/8/8/K7 b - - 0 1");
 	int32_pair npmat = eval_nonpawn_material(&pos);
@@ -299,40 +285,36 @@ void test_double_and_isolated_pawns() {
            - pawn_pst[B5] - pawn_pst[B4] - pawn_pst[C4] - pawn_pst[E4] - pawn_pst[H5]
            - isolated_pawn*2 // white pawns on e4 and h1
            - doubled_pawn*2;  // white pawns on b4 and b5
-	assert(eval(&pos,false,&stats)==expected);
+	assert(eval(&pos,false)==expected);
 }
 
 void test_score1() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
-	assert(eval(&pos,false,&stats)==-(pawn_pst[E4]-pawn_pst[E2]));
+	assert(eval(&pos,false)==-(pawn_pst[E4]-pawn_pst[E2]));
 }
 
 void test_score2() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-	assert(eval(&pos,false,&stats)==pawn_pst[E4]-pawn_pst[E2]-pawn_pst[fliprank[C6]]+pawn_pst[fliprank[C7]]);
+	assert(eval(&pos,false)==pawn_pst[E4]-pawn_pst[E2]-pawn_pst[fliprank[C6]]+pawn_pst[fliprank[C7]]);
 }
 
 void testcase_symmetry(position *pos,const char *fen) {
-	search_stats stats;
 	set_pos(pos,fen);
-	int32 score=eval(pos,false,&stats);
+	int32 score=eval(pos,false);
 	test_eval_symmetry(score,pos);
 }
 
 bool test_eval_symmetry(int32 score,position *pos) {
 	position flip_pos;
-	search_stats stats;
 
 	memcpy(&flip_pos,pos,sizeof(position));
 	flip_board(&flip_pos);
 
-	int32 score2=eval(&flip_pos,false,&stats);
+	int32 score2=eval(&flip_pos,false);
 	assert(score==score2);
 
 	flip_board(&flip_pos);
@@ -380,7 +362,6 @@ void test_vertical_symmetry() {
 
 void test_eval_material() {
 	position pos;
-	search_stats stats;
 
 	set_pos(&pos,"8/k7/prb5/K7/QN6/8/8/8 b - - 0 1");
 	int32_pair np = eval_nonpawn_material(&pos);
@@ -391,7 +372,7 @@ void test_eval_material() {
 	assert(p.val1==0);
 	assert(p.val2==pawn_val);
 
-	assert(eval(&pos,true,&stats)==pawn_val+rook_val+bishop_val-queen_val-knight_val);
+	assert(eval(&pos,true)==pawn_val+rook_val+bishop_val-queen_val-knight_val);
 }
 
 void test_eval_scale() {
@@ -403,16 +384,15 @@ void test_eval_scale() {
 
 void test_evalfunc() {
 	position pos;
-	search_stats stats;
 
 	reset_pos(&pos);
-	assert(eval(&pos,false,&stats)==0);
+	assert(eval(&pos,false)==0);
 
 	// ensure the score is from the player POV
 	set_pos(&pos,"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
-	int32 score=eval(&pos,false,&stats);
+	int32 score=eval(&pos,false);
 	pos.player=WHITE;
-	int32 score2=eval(&pos,false,&stats);
+	int32 score2=eval(&pos,false);
 	assert(score==-score2);
 }
 
