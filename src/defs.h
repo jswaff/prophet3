@@ -94,23 +94,17 @@ typedef struct {
 } move_line;
 
 typedef struct {
-	int32 start_time;
-	int32 stop_time;
-	uint64 nodes;
-	uint64 qnodes;
-	uint64 nodes_last_time_check;
-	move_line last_pv;
-	move_line first_line_searched;
-	uint64 hash_probes;
-	uint64 pawn_hash_probes;
-	uint64 hash_hits;
-	uint64 pawn_hash_hits;
-	uint64 hash_collisions;
-	uint64 pawn_hash_collisions;
+
 	uint64 fail_highs;
 	uint64 fail_lows;
 	uint64 hash_exact_scores;
+
+	uint64 nodes;
+	uint64 qnodes;
+	move_line last_pv;
+	move_line first_line_searched;
 	uint64 prunes;
+
 } search_stats;
 
 typedef struct {
@@ -138,6 +132,9 @@ typedef struct {
 	hash_entry *tblptr;
 	uint32 tblsize;
 	uint64 tblmask;
+	uint64 probes;
+	uint64 hits;
+	uint64 collisions;
 } hash_table;
 
 typedef struct {
@@ -204,7 +201,7 @@ bool is_draw_by_50(position *pos);
 
 // eval
 int32 piece_val(int32 pc);
-int32 eval(position *p,bool mat_only,search_stats *stats);
+int32 eval(position *p,bool mat_only);
 int32 eval_knight(position *p,square_t sq,bool wtm);
 int32 eval_bishop(position *p,square_t sq,bool wtm);
 int32 eval_rook(position *p,square_t sq,bool wtm);
@@ -238,8 +235,7 @@ int32 get_pawn_hash_entry_score(uint64 val);
 move get_hash_entry_move(uint64 val);
 void init_hash_table(hash_table *tbl,uint32 tblsize);
 void clear_hash_table(hash_table *tbl);
-uint64 get_hash_entry(uint64 key,search_stats *stats);
-uint64 get_pawn_hash_entry(uint64 key,search_stats *stats);
+uint64 get_hash_entry(hash_table *tbl,uint64 key);
 void store_hash_entry(hash_table *tbl,uint64 key,uint64 val);
 
 // init
@@ -325,11 +321,18 @@ bool is_zugzwang(position *pos);
 
 // prune
 bool prune(position *pos,move last_move,bool incheck,bool gives_check,
-		int32 extensions,int32 alpha,int32 beta,int32 depth,search_stats *stats);
+		int32 extensions,int32 alpha,int32 beta,int32 depth);
 
 // search
-int32 search(position *p,move_line *pv,int32 alpha,int32 beta,int32 ply,
-		search_stats *stats);
+bool is_abort_search();
+void set_abort_search(bool abort_search);
+bool is_analysis_mode();
+void set_analysis_mode(bool analysis_mode);
+int32 get_start_time();
+void set_start_time(int32 start_time);
+void set_stop_time(int32 stop_time);
+void set_abort_iterator(bool abort_iterator);
+
 int32 search(position *p,move_line *pv,int32 alpha,int32 beta,int32 ply,
 		search_stats *stats,move *move_stack,undo *undo_stack,bool show_thinking);
 int32 qsearch(position *pos,int32 alpha,int32 beta,int32 ply,int32 qply,bool incheck,
@@ -363,9 +366,18 @@ void init_directions();
 void test_suite(char *tsfile,int32 tstime);
 
 // think
-void think(int32 max_depth,int32 remaining_time,int32 increment,bool show_thinking);
-move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
-		bool show_thinking,bool test_suite_mode);
+void set_time_remaining(int32 time_remaining);
+void set_increment(int32 increment);
+void set_max_depth(int32 max_depth);
+void set_max_time(int32 max_time);
+void set_pondering_enabled(bool pondering_enabled);
+void set_post(bool post);
+bool is_pondering();
+void stop_pondering();
+move get_ponder_move();
+void calculate_search_times();
+void think();
+move_line iterate(position *pos,bool test_suite_mode);
 
 // time
 int32 milli_timer();
@@ -391,6 +403,7 @@ game_status get_game_status();
 void line_to_str(move_line *line,char *line_buffer);
 void print_move(move mv);
 uint64 random64();
+bool undo_stacks_equal(undo* stack1, undo* stack2,int32 num_elements);
 
 // xboard
 void print_thinking_output(move_line* line,int32 depth,int32 score,int32 start_time,uint64 nodes);

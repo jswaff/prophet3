@@ -12,6 +12,13 @@
 #include "../src/defs.h"
 #include "../src/eval.h"
 
+move move_stack[MOVE_STACK_SIZE];
+
+void start_timer(int milliseconds) {
+	set_start_time(milli_timer());
+	set_stop_time(get_start_time() + milliseconds);
+}
+
 void test_matein1() {
 	position pos;
 	set_pos(&pos,"4k3/8/3Q4/2B5/8/8/1K6/8 w - -");
@@ -19,9 +26,8 @@ void test_matein1() {
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
-	int32 score=search(&pos,&pv,-INF,INF,2,&stats);
+	start_timer(10000);
+	int32 score=search(&pos,&pv,-INF,INF,2,&stats,move_stack,gundos,false);
 	assert(score==CHECKMATE-1);
 }
 
@@ -32,9 +38,8 @@ void test_matein1b() {
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
-	int32 score=search(&pos,&pv,-INF,INF,2,&stats);
+	start_timer(10000);
+	int32 score=search(&pos,&pv,-INF,INF,2,&stats,move_stack,gundos,false);
 	assert(score==CHECKMATE-1);
 }
 
@@ -45,9 +50,8 @@ void test_matein2() {
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
-	int32 score=search(&pos,&pv,-INF,INF,4,&stats);
+	start_timer(10000);
+	int32 score=search(&pos,&pv,-INF,INF,4,&stats,move_stack,gundos,false);
 	assert(score==CHECKMATE-3);
 }
 
@@ -58,9 +62,8 @@ void test_matein3() {
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
-	int32 score=search(&pos,&pv,-INF,INF,6,&stats);
+	start_timer(10000);
+	int32 score=search(&pos,&pv,-INF,INF,6,&stats,move_stack,gundos,false);
 	assert(score==CHECKMATE-5);
 }
 
@@ -71,9 +74,8 @@ void test_stalemate() {
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
-	int32 score=search(&pos,&pv,-INF,INF,1,&stats);
+	start_timer(10000);
+	int32 score=search(&pos,&pv,-INF,INF,1,&stats,move_stack,gundos,false);
 	assert(score==DRAWSCORE);
 	assert(pv.n==0);
 }
@@ -93,20 +95,19 @@ void test_abort_search() {
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 
-	abort_search = true;
-	search(&pos,&pv,-INF,INF,1,&stats);
+	set_abort_search(true);
+	search(&pos,&pv,-INF,INF,1,&stats,move_stack,gundos,false);
 	//assert(stats.nodes==21); // 1 + 20
 
 
 	pv.n=0;
 	stats.nodes=0;
-	search(&pos,&pv,-INF,INF,3,&stats);
+	search(&pos,&pv,-INF,INF,3,&stats,move_stack,gundos,false);
 	assert(stats.nodes==4); // 1 + 3 (down the left side of the tree)
 
-	abort_search = false;
+	set_abort_search(false);
 }
 
 void test_search_last_pv_first() {
@@ -129,14 +130,13 @@ void test_search_last_pv_first() {
 	//print("last pv: %s\n",pv_text);
 
 	stats.nodes=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	stats.first_line_searched.n=0;
 	for (int i=0;i<MAX_PLY;i++) {
 		stats.first_line_searched.mv[i] = BADMOVE;
 	}
 	move_line pv; pv.n=0;
-	search(&pos,&pv,-INF,INF,5,&stats);
+	search(&pos,&pv,-INF,INF,5,&stats,move_stack,gundos,false);
 
 	line_to_str(&stats.first_line_searched,pv_text);
 	//print("first line length: %d\n",stats.first_line_searched.n);
@@ -158,10 +158,9 @@ void test_hash_table() {
 	memcpy(&save_pos,&pos,sizeof(position));
 
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	stats.first_line_searched.n=0;
-	abort_search=false;
+	set_abort_search(false);
 
 	// make a (ridiculous) entry up.  the program would never play 1. a4, UNLESS of course it would be a piece up!
 	// make 1. ... a5 a rook up for white, everything else a queen up, and verify PV is 1. a4 a5
@@ -190,7 +189,7 @@ void test_hash_table() {
 	memcpy(&pos,&save_pos,sizeof(position));
 
 	move_line pv; pv.n=0;
-	search(&pos,&pv,-INF,INF,3,&stats);
+	search(&pos,&pv,-INF,INF,3,&stats,move_stack,gundos,false);
 	assert(pv.n==2);
 	assert(a2a4==pv.mv[0]);
 	assert(a7a5==pv.mv[1]);
@@ -204,27 +203,24 @@ void test_draw_50() {
 
 	move_line pv; pv.n=0;
 	search_stats stats; stats.nodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 
-	abort_search = false;
-	int32 score = search(&pos,&pv,-INF,INF,2,&stats);
+	set_abort_search(false);
+	int32 score = search(&pos,&pv,-INF,INF,2,&stats,move_stack,gundos,false);
 	assert(score != DRAWSCORE);
 
 	// up to 99 (half) moves ... the extra comes from the root search
 	pos.fifty_counter = pos.move_counter= 98;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	clear_hash_table(&htbl);
-	score = search(&pos,&pv,-INF,INF,2,&stats);
+	score = search(&pos,&pv,-INF,INF,2,&stats,move_stack,gundos,false);
 	assert(score != DRAWSCORE);
 
 	// trigger 50 move rule
 	pos.fifty_counter = pos.move_counter = 99;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	clear_hash_table(&htbl);
-	score = search(&pos,&pv,-INF,INF,2,&stats);
+	score = search(&pos,&pv,-INF,INF,2,&stats,move_stack,gundos,false);
 	assert(score == DRAWSCORE);
 }
 
@@ -235,11 +231,10 @@ void test_qsearch_does_not_expand_initial_position() {
 	clear_hash_table(&htbl);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	move moves[50];
 
-	abort_search = false;
+	set_abort_search(false);
 	qsearch(&pos,-INF,INF,0,0,false,&stats,moves,gundos);
 
 	assert(stats.nodes==0);
@@ -252,14 +247,13 @@ void test_qsearch_standpat_raises_alpha() {
 
 	clear_hash_table(&htbl);
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 
-	int32 score = eval(&pos,false,&stats);
+	int32 score = eval(&pos,false);
 
 	move moves[50];
 
-	abort_search = false;
+	set_abort_search(false);
 	int32 qscore = qsearch(&pos,-INF,INF,0,0,false,&stats,moves,gundos);
 	assert(score==qscore);
 }
@@ -271,11 +265,10 @@ void test_qsearch_standpat_does_not_raise_alpha() {
 	clear_hash_table(&htbl);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	move moves[50];
 
-	abort_search = false;
+	set_abort_search(false);
 	int32 qscore = qsearch(&pos,queen_val,INF,0,0,false,&stats,moves,gundos);
 	assert(queen_val==qscore);
 }
@@ -287,11 +280,10 @@ void test_qsearch_expands_just_captures() {
 	clear_hash_table(&htbl);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	move moves[50];
 
-	abort_search = false;
+	set_abort_search(false);
 	qsearch(&pos,-INF,INF,0,0,false,&stats,moves,gundos);
 
 	assert(stats.nodes==0);
@@ -305,11 +297,10 @@ void test_qsearch_does_expand_promotions() {
 	clear_hash_table(&htbl);
 
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	move moves[50];
 
-	abort_search = false;
+	set_abort_search(false);
 	qsearch(&pos,-INF,INF,0,0,false,&stats,moves,gundos);
 
 	assert(stats.nodes==0);
@@ -322,14 +313,13 @@ void test_qsearch_beta_cutoff() {
 	// this position would be very good for white if searched
 	set_pos(&pos,"8/P6k/8/8/8/8/7K/8 w - -");
 	search_stats stats; stats.nodes=0; stats.qnodes=0; stats.last_pv.n=0;
-	stats.start_time=milli_timer();
-	stats.stop_time=stats.start_time + 10000;
+	start_timer(10000);
 	move moves[50];
 
-	int32 score = eval(&pos,false,&stats);
+	int32 score = eval(&pos,false);
 	assert(abs(score) < queen_val);
 
-	abort_search = false;
+	set_abort_search(false);
 	qsearch(&pos,-INF,-queen_val,0,0,false,&stats,moves,gundos);
 
 	assert(stats.nodes==0);

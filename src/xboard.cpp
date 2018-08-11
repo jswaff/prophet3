@@ -18,10 +18,8 @@
 pthread_t ics_thread;
 int32 last_input_time;
 bool force_mode = true;
-int32 max_depth = 0;
-int32 my_time = 0;
-int32 increment = 0;
-bool post = false;
+
+void stop_search_thread();
 
 void handle_bk() {
 	if (book_db==0) {
@@ -46,14 +44,11 @@ void handle_bk() {
 }
 
 void handle_drawboard() {
-	pthread_join(think_thread,NULL);
 	draw_board(&gpos);
 }
 
 void handle_eval() {
-	pthread_join(think_thread,NULL);
-	search_stats stats;
-	int32 eval_score=eval(&gpos,false,&stats);
+	int32 eval_score=eval(&gpos,false);
 	print("eval: %d\n",eval_score);
 }
 
@@ -63,6 +58,7 @@ void handle_eval() {
  * think, ponder, or make moves of its own.
  */
 void handle_force() {
+	stop_search_thread();
 	force_mode=true;
 }
 
@@ -94,6 +90,12 @@ void print_result(game_status gs) {
 	}
 }
 
+void stop_search_thread() {
+	set_abort_iterator(true);
+	set_abort_search(true);
+	pthread_join(think_thread,NULL);
+}
+
 void think_and_make_move() {
 	// check if game is over before we even get started.
 	game_status gs = get_game_status();
@@ -102,7 +104,11 @@ void think_and_make_move() {
 		return;
 	}
 
-	think(max_depth,my_time,increment,post);
+	think();
+}
+
+void handle_easy() {
+	set_pondering_enabled(false);
 }
 
 /**
@@ -117,9 +123,13 @@ void think_and_make_move() {
  * GUI until after the user has made a move.
  */
 void handle_go() {
-	pthread_join(think_thread,NULL);
+	stop_search_thread();
 	force_mode=false;
 	think_and_make_move();
+}
+
+void handle_hard() {
+	set_pondering_enabled(true);
 }
 
 /**
@@ -131,8 +141,9 @@ void handle_level() {
 	if (scanf("%s",base)==EOF) return;
 	float f_inc = 0.0;
 	if (scanf("%f",&f_inc)==EOF) return;
-	increment = (int32)(f_inc * 1000); // convert to ms
-	print("# increment: %d\n",increment);
+	int32 my_increment = (int32)(f_inc * 1000); // convert to ms
+	print("# increment: %d\n",my_increment);
+	set_increment(my_increment);
 }
 
 
@@ -173,8 +184,9 @@ void handle_memory() {
  * If the engine is thinking, it will immediately stop and move.
  */
 void handle_move_now() {
-	abort_search=true;
-	pthread_join(think_thread,NULL);
+	if (!is_pondering()) {
+		stop_search_thread();
+	}
 }
 
 /**
@@ -183,17 +195,17 @@ void handle_move_now() {
  * by the <sd> command.
  */
 void handle_new() {
-	pthread_join(think_thread,NULL);
+	stop_search_thread();
 	force_mode = false;
 	reset_pos(&gpos);
-	max_depth = 0;
+	set_max_depth(0);
 }
 
 /**
  * Turn off thinking/pondering output.
  */
 void handle_nopost() {
-	post = false;
+	set_post(false);
 }
 
 /**
@@ -205,7 +217,7 @@ void handle_otim() {
 }
 
 void handle_perft() {
-	pthread_join(think_thread,NULL);
+	draw_board(&gpos);
 	int max_depth;
 	if (scanf("%d",&max_depth) != EOF) {
 		int32 start = milli_timer();
@@ -219,12 +231,10 @@ void handle_perft() {
 }
 
 void handle_perft_test_fast() {
-	pthread_join(think_thread,NULL);
 	perft_test_fast();
 }
 
 void handle_perft_test_slow() {
-	pthread_join(think_thread,NULL);
 	int depth;
 	if (scanf("%d",&depth) != EOF) {
 		perft_test_slow(depth);
@@ -239,9 +249,7 @@ void handle_perft_test_slow() {
  * receives a move, it should start thinking and eventually reply.
  */
 void handle_playother() {
-	pthread_join(think_thread,NULL);
-	force_mode = false;
-	// TODO: ok to start pondering here
+	// TODO
 }
 
 /**
@@ -255,9 +263,9 @@ void handle_playother() {
  *
  */
 void handle_ping() {
-	print("# handling ping...\n");
-	pthread_join(think_thread,NULL); // TODO: this might change with pondering
-	print("# think_thread joined.\n");
+	if (!is_pondering()) {
+		stop_search_thread();
+	}
 	int n;
 	if (scanf("%d",&n) != EOF) {
 		print("pong %d\n",n);
@@ -268,7 +276,7 @@ void handle_ping() {
  * Turn on thinking/pondering output.
  */
 void handle_post() {
-	post = true;
+	set_post(true);
 }
 
 void handle_probe_book() {
@@ -297,8 +305,7 @@ void handle_protover() {
 }
 
 void handle_quit() {
-	abort_search = true;
-	pthread_join(think_thread,NULL);
+	stop_search_thread();
 	if (book_db != 0) {
 		sqlite3_close(book_db);
 	}
@@ -323,7 +330,7 @@ void handle_rating() {
  * Xboard sends this command only when the user is on move.
  */
 void handle_remove() {
-	pthread_join(think_thread,NULL);
+	stop_search_thread();
 	undo_last_move(&gpos,gundos);
 	undo_last_move(&gpos,gundos);
 }
@@ -341,8 +348,7 @@ void handle_remove() {
  * Edit Game, Exit, or the like. -- edit 9/8/12 : don't think that's true for Exit
  */
 void handle_result() {
-	abort_search = true;
-	pthread_join(think_thread,NULL);
+	stop_search_thread();
 	char result[10],text[100],comment[100];
 	if (scanf("%s",result)==EOF) return;
 	comment[0]='\0';
@@ -362,8 +368,10 @@ void handle_result() {
  *
  */
 void handle_sd() {
-	if (scanf("%d",&max_depth)==EOF) return;
-	print("# MAX DEPTH: %d\n",max_depth);
+	int32 my_max_depth;
+	if (scanf("%d",&my_max_depth)==EOF) return;
+	print("# MAX DEPTH: %d\n",my_max_depth);
+	set_max_depth(my_max_depth);
 }
 
 /**
@@ -389,9 +397,11 @@ void handle_setboard() {
  * Read in the engine's remaining time, in centiseconds.
  */
 void handle_time() {
-	if (scanf("%d",&my_time)==EOF) return;
-	my_time *= 10; // centiseconds to milliseconds
-	print("# MY TIME: %d\n",my_time);
+	int32 my_time_remaining;
+	if (scanf("%d",&my_time_remaining)==EOF) return;
+	my_time_remaining *= 10; // centiseconds to milliseconds
+	print("# TIME REMAINING: %d\n",my_time_remaining);
+	set_time_remaining(my_time_remaining);
 }
 
 /**
@@ -399,28 +409,41 @@ void handle_time() {
  * "force" mode first.  We don't have to worry about undoing a move the engine made.
  */
 void handle_undo() {
-	pthread_join(think_thread,NULL);
 	undo_last_move(&gpos,gundos);
 }
 
 void handle_usermove() {
-	pthread_join(think_thread,NULL);
-	print("# handle_usermove: thread joined\n");
 	char mv_text[MAX_CHARS_PER_MOVE];
 	if (scanf("%s",mv_text) == EOF) return;
-	print("# handle_usermove: mv_text=%s\n",mv_text);
 	move mv = str_to_move(mv_text,&gpos);
 	if (mv==BADMOVE) {
 		print("Illegal move: %s\n",mv_text);
 	} else {
 		char mv_buffer[MAX_CHARS_PER_MOVE];
 		move_to_str(mv,mv_buffer);
-		print("# APPLYING : %s\n",mv_buffer);
-
 		apply_move(&gpos,mv,gundos);
 
 		if (!force_mode) {
-			think_and_make_move();
+			bool predicted = mv == get_ponder_move();
+			bool pondering = is_pondering();
+			print("# pondering?: %s, predicted?: %s\n",(pondering?"true":"false"),(predicted?"true":"false"));
+			bool start_new_search;
+
+			extern pthread_mutex_t ponder_mutex;
+			pthread_mutex_lock(&ponder_mutex);
+			if (pondering && predicted) {
+				calculate_search_times();
+				stop_pondering();
+				start_new_search = false;
+			} else {
+				start_new_search = true;
+			}
+			pthread_mutex_unlock(&ponder_mutex);
+
+			if (start_new_search) {
+				stop_search_thread();
+				think_and_make_move();
+			}
 		}
 	}
 }
@@ -447,11 +470,11 @@ struct function_table_entry function_table[] = {
 		{"drawboard", handle_drawboard},  // not xboard!
 		{"db", handle_drawboard},         // not xboard!
 		{"draw", no_op},
-		{"easy", no_op},
+		{"easy", handle_easy},
 		{"eval", handle_eval},            // not xboard!
 		{"force", handle_force},
 		{"go", handle_go},
-		{"hard", no_op},
+		{"hard", handle_hard},
 		{"hint", no_op},
 		{"ics", no_op_with_arg},
 		{"level", handle_level},

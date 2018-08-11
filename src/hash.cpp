@@ -177,34 +177,21 @@ void clear_hash_table(hash_table *tbl) {
 		(he+i)->key = 0;
 		(he+i)->val = 0;
 	}
+	tbl->probes = 0;
+	tbl->hits = 0;
+	tbl->collisions = 0;
 }
 
-uint64 get_hash_entry(uint64 key,search_stats *stats) {
-	assert(htbl.tblptr);
-	stats->hash_probes++;
-	hash_entry *he = htbl.tblptr + (key & htbl.tblmask);
+uint64 get_hash_entry(hash_table *tbl,uint64 key) {
+	assert(tbl->tblptr);
+	tbl->probes++;
+	hash_entry *he = tbl->tblptr + (key & tbl->tblmask);
 	if (he->val != 0) {
 		if (he->key == key) { // do full signature match
-			stats->hash_hits++;
+			tbl->hits++;
 			return he->val;
 		} else {
-			stats->hash_collisions++;
-		}
-	}
-
-	return 0;
-}
-
-uint64 get_pawn_hash_entry(uint64 key,search_stats *stats) {
-	assert(phtbl.tblptr);
-	stats->pawn_hash_probes++;
-	hash_entry *he = phtbl.tblptr + (key & phtbl.tblmask);
-	if (he->val != 0) {
-		if (he->key == key) { // do full signature match
-			stats->pawn_hash_hits++;
-			return he->val;
-		} else {
-			stats->pawn_hash_collisions++;
+			tbl->collisions++;
 		}
 	}
 

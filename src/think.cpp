@@ -12,65 +12,113 @@
 #include "globals.h"
 #include "eval.h"
 
-typedef struct {
-	int32 max_depth;
-	int32 remaining_time;
-	int32 increment;
-	position search_pos;
-	bool show_thinking;
-} think_data;
+int32 time_remaining = 0;
+int32 increment = 0;
+int32 max_depth = 0;
+int32 max_time = 0;
+bool post = true;
+bool pondering_enabled = false;
+bool pondering = false;
+move ponder_move;
+bool abort_iterator = false;
+
+position search_pos;
+pthread_mutex_t ponder_mutex;
 
 // prototype for thread routine
 void* think_helper(void *ptr);
-think_data td;
 
-search_stats build_search_stats_dto(int32 max_search_time);
+search_stats build_search_stats_dto();
 void print_search_summary(int last_depth,search_stats *stats);
 
 move search_moves[MOVE_STACK_SIZE];
 undo search_undos[UNDO_STACK_SIZE];
 
+void set_time_remaining(int32 tr) { time_remaining = tr; }
+void set_increment(int32 inc) { increment = inc; }
+void set_max_depth(int32 md) { max_depth = md; }
+void set_max_time(int32 mt) { max_time = mt; }
+void set_pondering_enabled(bool enabled) { pondering_enabled = enabled; }
+void set_post(bool p) { post = p; }
+bool is_pondering() { return pondering; }
+move get_ponder_move() { return ponder_move; }
+void set_abort_iterator(bool abort) { abort_iterator = abort; }
+
+void stop_pondering() {
+	pondering = false;
+	set_analysis_mode(false);
+}
+
+void calculate_search_times() {
+	max_time = get_search_time(time_remaining,increment);
+	set_stop_time(get_start_time() + max_time);
+	print("# calculated search time: %d\n",max_time);
+}
+
 /**
  * think() is responsible for kicking off the iterative deepening search.
  */
-void think(int32 max_depth,int32 remaining_time,int32 increment,bool show_thinking) {
-	td.max_depth = max_depth;
-	td.remaining_time = remaining_time;
-	td.increment = increment;
-	td.show_thinking = show_thinking;
+void think() {
+
+	abort_iterator = false;
 
 	// make a copy of the current position.  note that just because we are
 	// operating off a copy of the global position, the global position
 	// itself should remain unchanged until our search is complete.
-	memcpy(&td.search_pos,&gpos,sizeof(position));
+	memcpy(&search_pos,&gpos,sizeof(position));
 
-	// initialize the search's undo stack to what's already been played
-	// for draw detection
+	// initialize the search's undo stack to what's already been played for draw detection
 	memcpy(search_undos,gundos,gpos.move_counter * sizeof(undo));
-
-	abort_search = false;
-	clear_hash_table(&htbl);
-	clear_hash_table(&phtbl);
 
 	pthread_create(&think_thread,NULL,think_helper,NULL);
 }
 
 
 void* think_helper(void *ptr) {
-	// figure out how much time we want to spend searching
-	int32 search_time = get_search_time(td.remaining_time,td.increment);
-	print("# time remaining in ms: %d, inc=%d, search_time=%d\n",td.remaining_time,td.increment,search_time);
-
-	move_line pv = iterate(&td.search_pos,search_time,td.max_depth,td.show_thinking,false);
+	pondering = false;
+	move_line pv = iterate(&search_pos,false);
 
 	// sanity check - the global position shouldn't have changed
-	assert(equal_pos(&td.search_pos,&gpos,true));
+	assert(equal_pos(&search_pos,&gpos,true));
+	assert(undo_stacks_equal(search_undos,gundos,gpos.move_counter));
 
 	apply_move(&gpos,pv.mv[0],gundos);
 	print_move(pv.mv[0]);
 	game_status gs = get_game_status();
 
+
+	// pondering loop.  as long as we guess correctly we'll loop back around.
+	// if we don't predict correctly this thread is terminated.
+	bool ponder_success = true;
+	char move_buffer[8];
+	while (!abort_iterator && gs==INPROGRESS && pondering_enabled && pv.n > 1 && ponder_success) {
+		ponder_move = pv.mv[1];
+		move_to_str(ponder_move,move_buffer);
+		print("### START PONDERING: %s\n",move_buffer);
+		pondering = true;
+		apply_move(&search_pos,pv.mv[0],search_undos); // apply the move just made so we're in sync
+		apply_move(&search_pos,ponder_move,search_undos); // apply the predicted move
+
+		pv = iterate(&search_pos,false);
+		print("# ponder search terminated.  analysis mode?: %s\n",(is_analysis_mode()?"true":"false"));
+
+		pthread_mutex_lock(&ponder_mutex);
+		if (!pondering) {
+			assert(equal_pos(&search_pos,&gpos,true));
+			assert(undo_stacks_equal(search_undos,gundos,gpos.move_counter));
+			apply_move(&gpos,pv.mv[0],gundos);
+			print_move(pv.mv[0]);
+			gs = get_game_status();
+		} else {
+			pondering = false;
+			ponder_success = false;
+		}
+		pthread_mutex_unlock(&ponder_mutex);
+	}
+
 	// If game is over by rule then print the result
+	print("# exiting search thread\n");
+
 	if (gs != INPROGRESS) {
 		print_result(gs);
 	}
@@ -80,19 +128,14 @@ void* think_helper(void *ptr) {
 
 /**
  * iterate over the given position, and return the principal variation.
- * max_search_time is the time to search in milliseconds.  If 0 it is ignored.
- * max_search_depth is the depth to search.  If 0 it is ignored.
  *
  * The returned line (PV) is guaranteed to have at least one move.
- *
- * abort_search should be set before calling this method.
  */
-move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
-		bool show_thinking,bool test_suite_mode) {
+move_line iterate(position *pos,bool test_suite_mode) {
 
 	move_line pv; pv.n=0;
 
-	if (!test_suite_mode && pos->move_counter <= 30) {
+	if (!test_suite_mode && !pondering && pos->move_counter <= 30) {
 		move book_mv = probe_book(pos);
 		if (book_mv) {
 			print("# book move\n");
@@ -113,7 +156,19 @@ move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
 		return pv;
 	}
 
-	search_stats stats = build_search_stats_dto(max_search_time);
+	clear_hash_table(&htbl);
+	clear_hash_table(&phtbl);
+	set_start_time(milli_timer());
+	if (test_suite_mode) {
+		set_stop_time(get_start_time() + max_time);
+	} else {
+		calculate_search_times();
+	}
+
+	search_stats stats = build_search_stats_dto();
+	set_analysis_mode(pondering);
+	set_abort_search(false);
+
 	int depth = 0;
 	bool stop_searching = false;
 
@@ -129,20 +184,20 @@ move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
 			beta_bound = score + (pawn_val / 3);
 		}
 
-		score=search(pos,&pv,alpha_bound,beta_bound,depth,&stats,search_moves,search_undos,show_thinking);
+		score=search(pos,&pv,alpha_bound,beta_bound,depth,&stats,search_moves,search_undos,post);
 
-		if ((score <= alpha_bound || score >= beta_bound) && !abort_search) {
+		if ((score <= alpha_bound || score >= beta_bound) && !is_abort_search()) {
 			print("# research depth %d!  alpha=%d, beta=%d, score=%d\n",depth,alpha_bound,beta_bound,score);
-			score=search(pos,&pv,-INF,INF,depth,&stats,search_moves,search_undos,show_thinking);
+			score=search(pos,&pv,-INF,INF,depth,&stats,search_moves,search_undos,post);
 		}
 
 		assert(pv.n > 0);
-		if (abort_search) {
+		if (is_abort_search()) {
 			break;
 		}
 
-		if (show_thinking) {
-			print_thinking_output(&pv,depth,score,stats.start_time,stats.nodes);
+		if (post) {
+			print_thinking_output(&pv,depth,score,get_start_time(),stats.nodes);
 		}
 		memcpy(&stats.last_pv,&pv,sizeof(move_line));
 
@@ -152,14 +207,17 @@ move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
 
 		// if this is a mate score we can stop
 		if (abs(score) > CHECKMATE-500) {
+			print("# stopping iterative search because mate found.\n");
 			stop_searching = true;
 		}
 
-		if (max_search_depth > 0 && depth >= max_search_depth) {
+		if (max_depth > 0 && depth >= max_depth) {
+			print("# stopping iterative search on depth.\n");
 			stop_searching = true;
 		}
-		int32 elapsed_time = milli_timer() - stats.start_time;
-		if (!test_suite_mode && elapsed_time > (max_search_time / 2)) {
+		int32 elapsed_time = milli_timer() - get_start_time();
+		if (!pondering && !test_suite_mode && elapsed_time > (max_time / 2)) {
+			print("# stopping iterative search because half time expired.\n");
 			stop_searching = true;
 		}
 	} while (!stop_searching);
@@ -173,22 +231,13 @@ move_line iterate(position *pos,int32 max_search_time,int32 max_search_depth,
 	return pv;
 }
 
-search_stats build_search_stats_dto(int32 max_search_time) {
+search_stats build_search_stats_dto() {
 	search_stats stats;
-	stats.start_time = milli_timer();
-	stats.stop_time = stats.start_time + max_search_time;
 	stats.nodes=0;
 	stats.qnodes=0;
-	stats.hash_probes=0;
-	stats.pawn_hash_probes=0;
-	stats.hash_hits=0;
-	stats.pawn_hash_hits=0;
-	stats.hash_collisions=0;
-	stats.pawn_hash_collisions=0;
 	stats.fail_highs=0;
 	stats.fail_lows=0;
 	stats.hash_exact_scores=0;
-	stats.nodes_last_time_check=0;
 	stats.first_line_searched.n=0;
 	stats.prunes=0;
 	stats.last_pv.n=0;
@@ -211,28 +260,34 @@ void print_search_summary(int last_depth,search_stats *stats) {
 	print("# nodes: %lluk, interior: %lluk (%.2f%%), quiescence: %lluk (%.2f%%)\n",
 			total_nodes/1000,stats->nodes/1000,interior_pct,stats->qnodes/1000,qnode_pct);
 
-	int32 search_time_ms = milli_timer() - stats->start_time + 1; // add 1 ms just to avoid div by 0
+	int32 search_time_ms = milli_timer() - get_start_time() + 1; // add 1 ms just to avoid div by 0
 	float search_time = search_time_ms / 1000.0;
 	uint64 nps = (stats->nodes+stats->qnodes) / search_time_ms;
 	print("# search time: %.2f seconds, rate: %llu kn/s\n",search_time,nps);
 
-	float hash_hit_pct = stats->hash_hits / ((stats->hash_probes+1)/100.0);
-	float hash_collision_pct = stats->hash_collisions / ((stats->hash_probes+1)/100.0);
+	uint64 hash_hits = htbl.hits;
+	uint64 hash_probes = htbl.probes;
+	uint64 hash_collisions = htbl.collisions;
+	float hash_hit_pct = hash_hits / ((hash_probes+1)/100.0);
+	float hash_collision_pct = hash_collisions / ((hash_probes+1)/100.0);
 	print("# hash probes: %lluk, hits: %lluk (%.2f%%), collisions: %lluk (%.2f%%)\n",
-			stats->hash_probes/1000,
-			stats->hash_hits/1000,hash_hit_pct,
-			stats->hash_collisions/1000,hash_collision_pct);
+			hash_probes/1000,
+			hash_hits/1000,hash_hit_pct,
+			hash_collisions/1000,hash_collision_pct);
 
-	float pawn_hash_hit_pct = stats->pawn_hash_hits / ((stats->pawn_hash_probes+1)/100.0);
-	float pawn_hash_collision_pct = stats->pawn_hash_collisions / ((stats->pawn_hash_probes+1)/100.0);
+	uint64 pawn_hash_hits = phtbl.hits;
+	uint64 pawn_hash_probes = phtbl.probes;
+	uint64 pawn_hash_collisions = phtbl.collisions;
+	float pawn_hash_hit_pct = pawn_hash_hits / ((pawn_hash_probes+1)/100.0);
+	float pawn_hash_collision_pct = pawn_hash_collisions / ((pawn_hash_probes+1)/100.0);
 	print("# pawn hash probes: %lluk, hits: %lluk (%.2f%%), collisions: %lluk (%.2f%%)\n",
-			stats->pawn_hash_probes/1000,
-			stats->pawn_hash_hits/1000,pawn_hash_hit_pct,
-			stats->pawn_hash_collisions/1000,pawn_hash_collision_pct);
+			pawn_hash_probes/1000,
+			pawn_hash_hits/1000,pawn_hash_hit_pct,
+			pawn_hash_collisions/1000,pawn_hash_collision_pct);
 
-	float fail_high_pct = stats->fail_highs / ((stats->hash_probes+1)/100.0);
-	float fail_low_pct = stats->fail_lows / ((stats->hash_probes+1)/100.0);
-	float exact_score_pct = stats->hash_exact_scores / ((stats->hash_probes+1)/100.0);
+	float fail_high_pct = stats->fail_highs / ((hash_probes+1)/100.0);
+	float fail_low_pct = stats->fail_lows / ((hash_probes+1)/100.0);
+	float exact_score_pct = stats->hash_exact_scores / ((hash_probes+1)/100.0);
 
 	print("# fail highs: %lluk (%.2f%%), fail lows: %lluk (%.2f%%), exact scores: %lluk (%.2f%%)\n",
 			stats->fail_highs,fail_high_pct,

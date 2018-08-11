@@ -80,11 +80,11 @@ void test_suite(char *tsfile,int32 tstime) {
 			print("\n");
 		}
 
-		abort_search = false;
 		clear_hash_table(&htbl);
 		clear_hash_table(&phtbl);
 
-		move_line pv = iterate(&pos,tstime*1000,0,true,true);
+		set_max_time(tstime*1000);
+		move_line pv = iterate(&pos,true);
 		num_total++;
 
 		// did we get it right?

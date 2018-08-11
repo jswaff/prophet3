@@ -12,6 +12,23 @@
 #include "defs.h"
 #include "eval.h"
 
+int32 start_time = 0;
+int32 stop_time = 0;
+uint64 nodes_last_time_check = 0;
+
+bool analysis_mode = false;
+bool abort_search = false;
+
+bool is_analysis_mode() { return analysis_mode; }
+void set_analysis_mode(bool am) { analysis_mode = am; }
+
+bool is_abort_search() { return abort_search; }
+void set_abort_search(bool abort) { abort_search = abort; }
+
+int32 get_start_time() { return start_time; }
+void set_start_time(int32 st) { start_time = st; }
+void set_stop_time(int32 st) { stop_time = st; }
+
 int32 search_helper(position *pos,move_line *parent_pv,int32 alpha,int32 beta,int32 depth,int32 ply,
 		bool in_pv,bool incheck,bool null_ok,search_stats *stats,move *startp,undo *undo_stack);
 void update_parent_pv(move_line *parent_pv,move_line* pv,move best_move);
@@ -34,20 +51,6 @@ move_order_dto build_move_order_dto(move *startp,move pvmv,move hashmv,
 }
 
 int32 search(position *pos,move_line *parent_pv,int32 alpha,int32 beta,int32 depth,
-		search_stats *stats) {
-
-	move* move_stack = (move*)malloc(MOVE_STACK_SIZE * sizeof(move));
-	undo* undo_stack = (undo*)malloc(UNDO_STACK_SIZE * sizeof(undo));
-
-	int32 score = search(pos,parent_pv,alpha,beta,depth,stats,move_stack,undo_stack,false);
-
-	free(undo_stack);
-	free(move_stack);
-
-	return score;
-}
-
-int32 search(position *pos,move_line *parent_pv,int32 alpha,int32 beta,int32 depth,
 		search_stats *stats,move *move_stack,undo *undo_stack,bool show_thinking) {
 
 	assert(pos);
@@ -62,7 +65,7 @@ int32 search(position *pos,move_line *parent_pv,int32 alpha,int32 beta,int32 dep
 
 	// search each move
 	int32 moves_searched=0;
-	uint64 hash_val = get_hash_entry(pos->hash_key,stats);
+	uint64 hash_val = get_hash_entry(&htbl,pos->hash_key);
 	move_order_dto mo_dto = build_move_order_dto(move_stack,
 			stats->last_pv.n > 0 ? stats->last_pv.mv[0] : 0,
 			get_hash_entry_move(hash_val),
@@ -112,7 +115,7 @@ int32 search(position *pos,move_line *parent_pv,int32 alpha,int32 beta,int32 dep
 			alpha = score;
 			update_parent_pv(parent_pv,&pv,*mp);
 			if (show_thinking) {
-				print_thinking_output(parent_pv,depth,alpha,stats->start_time,stats->nodes);
+				print_thinking_output(parent_pv,depth,alpha,start_time,stats->nodes);
 			}
 		}
 	}
@@ -149,15 +152,15 @@ int32 search_helper(position *pos,move_line *parent_pv,
 	}
 
 	// time check
-	if (stats->nodes_last_time_check >= 50000) {
-		if (milli_timer() >= stats->stop_time) {
+	if (!analysis_mode && nodes_last_time_check >= 50000) {
+		if (milli_timer() >= stop_time) {
 			abort_search = true;
 			print("# Aborting search depth=%d, ply=%d on time...\n",depth,ply);
 			return 0;
 		}
-		stats->nodes_last_time_check = 0;
+		nodes_last_time_check = 0;
 	} else {
-		stats->nodes_last_time_check++;
+		nodes_last_time_check++;
 	}
 
 	// draw check.  Note: not doing insufficient material (too expensive?)
@@ -166,7 +169,7 @@ int32 search_helper(position *pos,move_line *parent_pv,
 	}
 
 	// check hash table for score and/or move
-	uint64 hash_val = get_hash_entry(pos->hash_key,stats);
+	uint64 hash_val = get_hash_entry(&htbl,pos->hash_key);
 	if (hash_val != 0 && get_hash_entry_depth(hash_val) >= depth) {
 		hash_entry_t hash_entry_type = get_hash_entry_type(hash_val);
 		if (hash_entry_type==LOWER_BOUND) {
@@ -248,7 +251,7 @@ int32 search_helper(position *pos,move_line *parent_pv,
 		} else {
 
 			// if this position is looking unpromising, just skip it
-			if (prune(pos,*mp,incheck,gives_check,ext,alpha,beta,depth,stats)) {
+			if (prune(pos,*mp,incheck,gives_check,ext,alpha,beta,depth)) {
 				undo_last_move(pos,undo_stack);
 				stats->prunes++;
 				moves_pruned++;
@@ -324,20 +327,20 @@ int32 qsearch(position *pos,int32 alpha,int32 beta,int32 ply,int32 qply,
 	assert(alpha < beta);
 
 	// time check
-	if (stats->nodes_last_time_check >= 10000) {
-		if (milli_timer() >= stats->stop_time) {
+	if (!analysis_mode && nodes_last_time_check >= 10000) {
+		if (milli_timer() >= stop_time) {
 			abort_search = true;
 			print("# Aborting qsearch on time...\n");
 			return 0;
 		}
-		stats->nodes_last_time_check = 0;
+		nodes_last_time_check = 0;
 	} else {
-		stats->nodes_last_time_check++;
+		nodes_last_time_check++;
 	}
 
 	// TODO: try hash probe
 
-	int32 stand_pat = eval(pos,false,stats);
+	int32 stand_pat = eval(pos,false);
 	assert(test_eval_symmetry(stand_pat,pos));
 
 	if (stand_pat > alpha) {

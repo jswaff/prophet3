@@ -416,3 +416,21 @@ uint64 random64() {
 	return ((r1<<32)|r2);
 }
 
+bool undo_stacks_equal(undo* stack1, undo* stack2,int32 num_elements) {
+
+	for (int32 i=0;i<num_elements;i++) {
+		undo e1 = *(stack1 + i);
+		undo e2 = *(stack2 + i);
+
+		if (e1.mv != e2.mv || e1.hash_key != e2.hash_key
+				|| e1.fifty_counter != e2.fifty_counter
+				|| e1.ep_sq != e2.ep_sq
+				|| e1.castling_rights != e2.castling_rights
+				|| e1.captured != e2.captured)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}

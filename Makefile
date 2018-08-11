@@ -1,7 +1,7 @@
 CC = g++
 
-CFLAGS = -O3 -DNDEBUG -funroll-loops -fomit-frame-pointer 
-#CFLAGS = -O0 -g 
+# CFLAGS = -O3 -DNDEBUG -funroll-loops -fomit-frame-pointer 
+CFLAGS = -O0 -g 
 
 LIBS = -lsqlite3 -lpthread
 
@@ -12,8 +12,8 @@ SRC = src/apply.cpp src/attack.cpp src/bitboards.cpp src/book.cpp src/draw.cpp s
 	src/see.cpp src/square.cpp src/suites.cpp src/think.cpp src/time.cpp src/utils.cpp \
 	src/xboard.cpp 
 
-TESTSRC = test/apply__test.cpp test/attack__test.cpp test/bitboards__test.cpp test/defs__test.cpp \
-	test/draw__test.cpp test/eval__test.cpp test/evalp__test.cpp test/extend__test.cpp \
+TESTSRC = test/apply__test.cpp test/attack__test.cpp test/bitboards__test.cpp test/book__test.cpp \
+	test/defs__test.cpp test/draw__test.cpp test/eval__test.cpp test/evalp__test.cpp test/extend__test.cpp \
 	test/hash__test.cpp test/init__test.cpp test/magic__test.cpp test/move__test.cpp test/movegen__test.cpp \
 	test/mvvlva__test.cpp test/next__test.cpp test/pos__test.cpp test/prune__test.cpp \
 	test/search__test.cpp test/see__test.cpp test/square__test.cpp test/time__test.cpp \
