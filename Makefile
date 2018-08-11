@@ -1,7 +1,7 @@
 CC = g++
 
-# CFLAGS = -O3 -DNDEBUG -funroll-loops -fomit-frame-pointer 
-CFLAGS = -O0 -g 
+CFLAGS = -O3 -DNDEBUG -funroll-loops -fomit-frame-pointer 
+# CFLAGS = -O0 -g 
 
 LIBS = -lsqlite3 -lpthread
 
