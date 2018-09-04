@@ -83,6 +83,8 @@ void test_suite(char *tsfile,int32 tstime) {
 		clear_hash_table(&htbl);
 		clear_hash_table(&phtbl);
 
+		set_abort_iterator(false);
+		set_ponder_mode(false);
 		set_max_time(tstime*1000);
 		move_line pv = iterate(&pos,true);
 		num_total++;

@@ -92,7 +92,6 @@ void print_result(game_status gs) {
 
 void stop_search_thread() {
 	set_abort_iterator(true);
-	set_abort_search(true);
 	pthread_join(think_thread,NULL);
 }
 
@@ -424,24 +423,33 @@ void handle_usermove() {
 		apply_move(&gpos,mv,gundos);
 
 		if (!force_mode) {
-			bool predicted = mv == get_ponder_move();
-			bool pondering = is_pondering();
-			print("# pondering?: %s, predicted?: %s\n",(pondering?"true":"false"),(predicted?"true":"false"));
-			bool start_new_search;
 
+			// we might be in a ponder search
 			extern pthread_mutex_t ponder_mutex;
 			pthread_mutex_lock(&ponder_mutex);
+			print("# handle_usermove acquired lock on ponder_mutex\n");
+
+			bool pondering = is_pondering();
+			bool predicted = pondering && (mv == get_ponder_move());
+			print("# pondering?: %s, predicted?: %s\n",(pondering?"true":"false"),(predicted?"true":"false"));
+
+			// if we are pondering and have correctly predicted the opponent's move, we just transition into
+			// a regular search by setting the search time limit and setting ponder=false.
+			bool start_new_search;
 			if (pondering && predicted) {
 				calculate_search_times();
-				stop_pondering();
+				set_ponder_mode(false);
 				start_new_search = false;
 			} else {
+				set_abort_iterator(true);
 				start_new_search = true;
 			}
+
 			pthread_mutex_unlock(&ponder_mutex);
+			print("# handle_usermove released lock on ponder_mutex\n");
 
 			if (start_new_search) {
-				stop_search_thread();
+				pthread_join(think_thread,NULL);
 				think_and_make_move();
 			}
 		}
