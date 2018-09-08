@@ -331,7 +331,7 @@ void set_analysis_mode(bool analysis_mode);
 int32 get_start_time();
 void set_start_time(int32 start_time);
 void set_stop_time(int32 stop_time);
-void set_abort_iterator(bool abort_iterator);
+void set_abort_iterator(bool abort_iterator); // also sets abort_search
 
 int32 search(position *p,move_line *pv,int32 alpha,int32 beta,int32 ply,
 		search_stats *stats,move *move_stack,undo *undo_stack,bool show_thinking);
@@ -373,7 +373,7 @@ void set_max_time(int32 max_time);
 void set_pondering_enabled(bool pondering_enabled);
 void set_post(bool post);
 bool is_pondering();
-void stop_pondering();
+void set_ponder_mode(bool ponder_mode); // also sets analysis mode
 move get_ponder_move();
 void calculate_search_times();
 void think();

@@ -18,9 +18,9 @@ int32 max_depth = 0;
 int32 max_time = 0;
 bool post = true;
 bool pondering_enabled = false;
-bool pondering = false;
-move ponder_move;
-bool abort_iterator = false;
+bool volatile pondering = false;
+move volatile ponder_move;
+bool volatile abort_iterator = false;
 
 position search_pos;
 pthread_mutex_t ponder_mutex;
@@ -42,11 +42,15 @@ void set_pondering_enabled(bool enabled) { pondering_enabled = enabled; }
 void set_post(bool p) { post = p; }
 bool is_pondering() { return pondering; }
 move get_ponder_move() { return ponder_move; }
-void set_abort_iterator(bool abort) { abort_iterator = abort; }
 
-void stop_pondering() {
-	pondering = false;
-	set_analysis_mode(false);
+void set_abort_iterator(bool abort) {
+	abort_iterator = abort;
+	set_abort_search(abort);
+}
+
+void set_ponder_mode(bool ponder_mode) {
+	pondering = ponder_mode;
+	set_analysis_mode(ponder_mode);
 }
 
 void calculate_search_times() {
@@ -60,8 +64,6 @@ void calculate_search_times() {
  */
 void think() {
 
-	abort_iterator = false;
-
 	// make a copy of the current position.  note that just because we are
 	// operating off a copy of the global position, the global position
 	// itself should remain unchanged until our search is complete.
@@ -70,12 +72,15 @@ void think() {
 	// initialize the search's undo stack to what's already been played for draw detection
 	memcpy(search_undos,gundos,gpos.move_counter * sizeof(undo));
 
+	set_ponder_mode(false);
+	set_abort_iterator(false);
+
 	pthread_create(&think_thread,NULL,think_helper,NULL);
 }
 
 
 void* think_helper(void *ptr) {
-	pondering = false;
+
 	move_line pv = iterate(&search_pos,false);
 
 	// sanity check - the global position shouldn't have changed
@@ -89,31 +94,59 @@ void* think_helper(void *ptr) {
 
 	// pondering loop.  as long as we guess correctly we'll loop back around.
 	// if we don't predict correctly this thread is terminated.
-	bool ponder_success = true;
+	bool ponder_failure = false;
 	char move_buffer[8];
-	while (!abort_iterator && gs==INPROGRESS && pondering_enabled && pv.n > 1 && ponder_success) {
-		ponder_move = pv.mv[1];
-		move_to_str(ponder_move,move_buffer);
-		print("### START PONDERING: %s\n",move_buffer);
-		pondering = true;
-		apply_move(&search_pos,pv.mv[0],search_undos); // apply the move just made so we're in sync
-		apply_move(&search_pos,ponder_move,search_undos); // apply the predicted move
-
-		pv = iterate(&search_pos,false);
-		print("# ponder search terminated.  analysis mode?: %s\n",(is_analysis_mode()?"true":"false"));
+	while (gs==INPROGRESS && pondering_enabled && pv.n > 1 && !ponder_failure && !abort_iterator) {
 
 		pthread_mutex_lock(&ponder_mutex);
-		if (!pondering) {
-			assert(equal_pos(&search_pos,&gpos,true));
-			assert(undo_stacks_equal(search_undos,gundos,gpos.move_counter));
-			apply_move(&gpos,pv.mv[0],gundos);
-			print_move(pv.mv[0]);
-			gs = get_game_status();
-		} else {
-			pondering = false;
-			ponder_success = false;
+		print("# think_helper acquired lock #1 on ponder_mutex\n");
+
+		if (!abort_iterator) {
+			ponder_move = pv.mv[1];
+			move_to_str(ponder_move,move_buffer);
+			apply_move(&search_pos,pv.mv[0],search_undos); // apply the move just made so we're in sync
+			apply_move(&search_pos,ponder_move,search_undos); // apply the predicted move
+
+			print("### START PONDERING: %s\n",move_buffer);
+
+			set_ponder_mode(true);
+			set_abort_search(false);
+
+			pthread_mutex_unlock(&ponder_mutex);
+			print("# think_helper released lock #1 on ponder_mutex\n");
+
+			pv = iterate(&search_pos,false);
+			print("# ponder search terminated\n");
+
+
+			// TODO: what main thread decides to start a new search? (ponder miss)
+			// we will block
+
+			pthread_mutex_lock(&ponder_mutex);
+			print("# think_helper acquired lock #2 on ponder_mutex\n");
+
+			ponder_move = 0;
+
+			// if we're not in ponder mode, it's because the usermove was correctly predicted and the main
+			// thread transitioned the search into "normal mode."
+			if (!pondering) {
+				assert(equal_pos(&search_pos,&gpos,true));
+				assert(undo_stacks_equal(search_undos,gundos,gpos.move_counter));
+				apply_move(&gpos,pv.mv[0],gundos);
+				print_move(pv.mv[0]);
+				gs = get_game_status();
+			} else {
+				// we're still in ponder mode.  this means the search terminated on its own.
+				// in this case just bail out.
+				ponder_failure = true;
+			}
+
+			set_ponder_mode(false);
 		}
+
 		pthread_mutex_unlock(&ponder_mutex);
+		print("# think_helper released lock #2 on ponder_mutex\n");
+
 	}
 
 	// If game is over by rule then print the result
@@ -166,8 +199,6 @@ move_line iterate(position *pos,bool test_suite_mode) {
 	}
 
 	search_stats stats = build_search_stats_dto();
-	set_analysis_mode(pondering);
-	set_abort_search(false);
 
 	int depth = 0;
 	bool stop_searching = false;
