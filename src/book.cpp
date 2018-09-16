@@ -107,13 +107,13 @@ static int num_moves_callback(void *data, int argc, char **argv, char **azColNam
 		*num_moves = atoi(argv[0]);
 	}
 
-	print("num moves: %d\n",*num_moves);
+	printd("num moves: %d\n",*num_moves);
 
 	return 0;
 }
 
 void load_zkeys() {
-	print("loading zkeys from book...\n");
+	printd("loading zkeys from book...\n");
 
 	char* sql = "select key from zobrist_keys order by id";
 	char *err_msg = 0;
@@ -124,7 +124,7 @@ void load_zkeys() {
 		error("SQL error: %s\n",err_msg);
 		sqlite3_free(err_msg);
 	}
-	print("loaded %d keys\n",num_keys);
+	printd("loaded %d keys\n",num_keys);
 }
 
 int32 open_book_db(char *path) {
@@ -199,11 +199,11 @@ move probe_book(position *p) {
 	for (int i=0;i<num_book_moves;i++) {
 		if (mfp[i].freq > 0) {
 			move_to_str(mfp[i].mv,move_buffer);
-			print("# book move: %s, freq: %d\n",move_buffer,mfp[i].freq);
+			printd("# book move: %s, freq: %d\n",move_buffer,mfp[i].freq);
 			total_freq += mfp[i].freq;
 		}
 	}
-	print("# total freq: %d\n",total_freq);
+	printd("# total freq: %d\n",total_freq);
 	if (total_freq==0) {
 		return 0;
 	}
@@ -212,7 +212,7 @@ move probe_book(position *p) {
 	srand(time(NULL));
 	double g = rand() / ((double) RAND_MAX); // [0-1]
 	double random_weight = g * total_freq;
-	print("# random weight: %f\n",random_weight);
+	printd("# random weight: %f\n",random_weight);
 
 	int sum_freq = 0;
 	move selected_mv = 0;
@@ -222,7 +222,7 @@ move probe_book(position *p) {
 			if (sum_freq >= random_weight) {
 				selected_mv = mfp[i].mv;
 				move_to_str(selected_mv,move_buffer);
-				print("# selected move %s with sum_freq=%d\n",move_buffer,sum_freq);
+				printd("# selected move %s with sum_freq=%d\n",move_buffer,sum_freq);
 				break;
 			}
 		}
@@ -233,11 +233,11 @@ move probe_book(position *p) {
 
 int32 get_book_moves(move_freq_pair *mfp,position *p) {
 	if (book_db==0) {
-		print("# can't probe - no book database\n");
+		printd("# can't probe - no book database\n");
 		return 0;
 	}
 
-	print("# probing book...\n");
+	printd("# probing book...\n");
 
 	long long key = build_book_key(p);
 

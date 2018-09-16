@@ -141,7 +141,7 @@ void handle_level() {
 	float f_inc = 0.0;
 	if (scanf("%f",&f_inc)==EOF) return;
 	int32 my_increment = (int32)(f_inc * 1000); // convert to ms
-	print("# increment: %d\n",my_increment);
+	printd("# increment: %d\n",my_increment);
 	set_increment(my_increment);
 }
 
@@ -163,7 +163,7 @@ void handle_memory() {
 	int32 mem_in_mb;
 	if (scanf("%d",&mem_in_mb)==EOF) return;
 
-	print("# received memory command, N=%d\n",mem_in_mb);
+	printd("# received memory command, N=%d\n",mem_in_mb);
 	if (mem_in_mb != last_mem_in_mb) {
 		free(htbl.tblptr);
 		free(phtbl.tblptr);
@@ -175,7 +175,7 @@ void handle_memory() {
 
 		last_mem_in_mb = mem_in_mb;
 	} else {
-		print("# memory usage hasn't changed, skipping free/malloc\n");
+		printd("# memory usage hasn't changed, skipping free/malloc\n");
 	}
 }
 
@@ -369,7 +369,7 @@ void handle_result() {
 void handle_sd() {
 	int32 my_max_depth;
 	if (scanf("%d",&my_max_depth)==EOF) return;
-	print("# MAX DEPTH: %d\n",my_max_depth);
+	printd("# MAX DEPTH: %d\n",my_max_depth);
 	set_max_depth(my_max_depth);
 }
 
@@ -385,7 +385,7 @@ void handle_setboard() {
 	if (!gets(fen)) {
 		return;
 	}
-	print("# SETBOARD FEN: %s\n",fen);
+	printd("# SETBOARD FEN: %s\n",fen);
 	if (!set_pos(&gpos,fen)) {
 		print("tellusererror illegal position\n");
 	}
@@ -399,7 +399,7 @@ void handle_time() {
 	int32 my_time_remaining;
 	if (scanf("%d",&my_time_remaining)==EOF) return;
 	my_time_remaining *= 10; // centiseconds to milliseconds
-	print("# TIME REMAINING: %d\n",my_time_remaining);
+	printd("# TIME REMAINING: %d\n",my_time_remaining);
 	set_time_remaining(my_time_remaining);
 }
 
@@ -427,11 +427,11 @@ void handle_usermove() {
 			// we might be in a ponder search
 			extern pthread_mutex_t ponder_mutex;
 			pthread_mutex_lock(&ponder_mutex);
-			print("# handle_usermove acquired lock on ponder_mutex\n");
+			printd("# handle_usermove acquired lock on ponder_mutex\n");
 
 			bool pondering = is_pondering();
 			bool predicted = pondering && (mv == get_ponder_move());
-			print("# pondering?: %s, predicted?: %s\n",(pondering?"true":"false"),(predicted?"true":"false"));
+			printd("# pondering?: %s, predicted?: %s\n",(pondering?"true":"false"),(predicted?"true":"false"));
 
 			// if we are pondering and have correctly predicted the opponent's move, we just transition into
 			// a regular search by setting the search time limit and setting ponder=false.
@@ -446,7 +446,7 @@ void handle_usermove() {
 			}
 
 			pthread_mutex_unlock(&ponder_mutex);
-			print("# handle_usermove released lock on ponder_mutex\n");
+			printd("# handle_usermove released lock on ponder_mutex\n");
 
 			if (start_new_search) {
 				pthread_join(think_thread,NULL);
@@ -520,7 +520,7 @@ struct function_table_entry function_table[] = {
 void parse_command(const char *cmd) {
 
 	last_input_time = milli_timer();
-	print("# RECEIVED: %s\n",cmd);
+	printd("# RECEIVED: %s\n",cmd);
 
 	int len=sizeof(function_table)/sizeof(function_table_entry);
 

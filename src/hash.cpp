@@ -153,7 +153,7 @@ void init_hash_table(hash_table *tbl,uint32 tblsize) {
 	assert(tblsize > 0);
 
 	int max_entries = tblsize / sizeof(hash_entry);
-	print("# max hash entries: %d\n",max_entries);
+	printd("# max hash entries: %d\n",max_entries);
 
 	// this loop will set # entries to a power of 2 > max_entries
 	int actual_entries = 2;
@@ -164,10 +164,10 @@ void init_hash_table(hash_table *tbl,uint32 tblsize) {
 
 	// set the mask and allocate memory
 	tbl->tblmask = actual_entries - 1;
-	print("# effective hash entries: %d\n",actual_entries);
+	printd("# effective hash entries: %d\n",actual_entries);
 
 	tbl->tblptr = (hash_entry*)malloc(actual_entries * sizeof(hash_entry));
-	print("# effective table size: %d bytes\n\n",actual_entries * sizeof(hash_entry));
+	printd("# effective table size: %d bytes\n\n",actual_entries * sizeof(hash_entry));
 }
 
 void clear_hash_table(hash_table *tbl) {
