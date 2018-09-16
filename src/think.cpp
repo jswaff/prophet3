@@ -118,10 +118,6 @@ void* think_helper(void *ptr) {
 			pv = iterate(&search_pos,false);
 			print("# ponder search terminated\n");
 
-
-			// TODO: what main thread decides to start a new search? (ponder miss)
-			// we will block
-
 			pthread_mutex_lock(&ponder_mutex);
 			print("# think_helper acquired lock #2 on ponder_mutex\n");
 
