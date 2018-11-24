@@ -56,7 +56,7 @@ void set_ponder_mode(bool ponder_mode) {
 void calculate_search_times() {
 	max_time = get_search_time(time_remaining,increment);
 	set_stop_time(get_start_time() + max_time);
-	print("# calculated search time: %d\n",max_time);
+	printd("# calculated search time: %d\n",max_time);
 }
 
 /**
@@ -99,7 +99,7 @@ void* think_helper(void *ptr) {
 	while (gs==INPROGRESS && pondering_enabled && pv.n > 1 && !ponder_failure && !abort_iterator) {
 
 		pthread_mutex_lock(&ponder_mutex);
-		print("# think_helper acquired lock #1 on ponder_mutex\n");
+		printd("# think_helper acquired lock #1 on ponder_mutex\n");
 
 		if (!abort_iterator) {
 			ponder_move = pv.mv[1];
@@ -107,19 +107,19 @@ void* think_helper(void *ptr) {
 			apply_move(&search_pos,pv.mv[0],search_undos); // apply the move just made so we're in sync
 			apply_move(&search_pos,ponder_move,search_undos); // apply the predicted move
 
-			print("### START PONDERING: %s\n",move_buffer);
+			printd("### START PONDERING: %s\n",move_buffer);
 
 			set_ponder_mode(true);
 			set_abort_search(false);
 
 			pthread_mutex_unlock(&ponder_mutex);
-			print("# think_helper released lock #1 on ponder_mutex\n");
+			printd("# think_helper released lock #1 on ponder_mutex\n");
 
 			pv = iterate(&search_pos,false);
-			print("# ponder search terminated\n");
+			printd("# ponder search terminated\n");
 
 			pthread_mutex_lock(&ponder_mutex);
-			print("# think_helper acquired lock #2 on ponder_mutex\n");
+			printd("# think_helper acquired lock #2 on ponder_mutex\n");
 
 			ponder_move = 0;
 
@@ -141,12 +141,12 @@ void* think_helper(void *ptr) {
 		}
 
 		pthread_mutex_unlock(&ponder_mutex);
-		print("# think_helper released lock #2 on ponder_mutex\n");
+		printd("# think_helper released lock #2 on ponder_mutex\n");
 
 	}
 
 	// If game is over by rule then print the result
-	print("# exiting search thread\n");
+	printd("# exiting search thread\n");
 
 	if (gs != INPROGRESS) {
 		print_result(gs);
@@ -167,7 +167,7 @@ move_line iterate(position *pos,bool test_suite_mode) {
 	if (!test_suite_mode && !pondering && pos->move_counter <= 30) {
 		move book_mv = probe_book(pos);
 		if (book_mv) {
-			print("# book move\n");
+			printd("# book move\n");
 			pv.mv[0] = book_mv;
 			pv.n = 1;
 			return pv;
@@ -177,7 +177,7 @@ move_line iterate(position *pos,bool test_suite_mode) {
 	// if just one legal move don't bother searching
 	move *endp = gen_legal_moves(search_moves,pos,true,true);
 	int num_mvs = num_moves(search_moves,endp,true,true);
-	print("# position has %d move(s)\n",num_mvs);
+	printd("# position has %d move(s)\n",num_mvs);
 	if (!test_suite_mode && num_mvs==1) {
 		best_at_top(search_moves,endp);
 		pv.mv[0] = search_moves[0];
@@ -214,7 +214,7 @@ move_line iterate(position *pos,bool test_suite_mode) {
 		score=search(pos,&pv,alpha_bound,beta_bound,depth,&stats,search_moves,search_undos,post);
 
 		if ((score <= alpha_bound || score >= beta_bound) && !is_abort_search()) {
-			print("# research depth %d!  alpha=%d, beta=%d, score=%d\n",depth,alpha_bound,beta_bound,score);
+			printd("# research depth %d!  alpha=%d, beta=%d, score=%d\n",depth,alpha_bound,beta_bound,score);
 			score=search(pos,&pv,-INF,INF,depth,&stats,search_moves,search_undos,post);
 		}
 
@@ -234,17 +234,17 @@ move_line iterate(position *pos,bool test_suite_mode) {
 
 		// if this is a mate score we can stop
 		if (abs(score) > CHECKMATE-500) {
-			print("# stopping iterative search because mate found.\n");
+			printd("# stopping iterative search because mate found.\n");
 			stop_searching = true;
 		}
 
 		if (max_depth > 0 && depth >= max_depth) {
-			print("# stopping iterative search on depth.\n");
+			printd("# stopping iterative search on depth.\n");
 			stop_searching = true;
 		}
 		int32 elapsed_time = milli_timer() - get_start_time();
 		if (!pondering && !test_suite_mode && elapsed_time > (max_time / 2)) {
-			print("# stopping iterative search because half time expired.\n");
+			printd("# stopping iterative search because half time expired.\n");
 			stop_searching = true;
 		}
 	} while (!stop_searching);

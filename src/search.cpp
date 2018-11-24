@@ -155,7 +155,7 @@ int32 search_helper(position *pos,move_line *parent_pv,
 	if (!analysis_mode && nodes_last_time_check >= 50000) {
 		if (milli_timer() >= stop_time) {
 			abort_search = true;
-			print("# Aborting search depth=%d, ply=%d on time...\n",depth,ply);
+			printd("# Aborting search depth=%d, ply=%d on time...\n",depth,ply);
 			return 0;
 		}
 		nodes_last_time_check = 0;
@@ -330,7 +330,7 @@ int32 qsearch(position *pos,int32 alpha,int32 beta,int32 ply,int32 qply,
 	if (!analysis_mode && nodes_last_time_check >= 10000) {
 		if (milli_timer() >= stop_time) {
 			abort_search = true;
-			print("# Aborting qsearch on time...\n");
+			printd("# Aborting qsearch on time...\n");
 			return 0;
 		}
 		nodes_last_time_check = 0;

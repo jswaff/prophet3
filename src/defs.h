@@ -163,6 +163,8 @@ void error(const char* format, ...);
 void init_logfile();
 void parse_command(const char *cmd);
 void print(const char* format, ...);
+void printd(const char* format, ...); // debug print
+
 
 // apply
 void apply_move(position* p,move m,undo *undo_stack);
