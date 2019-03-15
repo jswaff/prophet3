@@ -382,7 +382,7 @@ void handle_sd() {
  */
 void handle_setboard() {
 	char fen[255];
-	if (!gets(fen)) {
+	if (!fgets(fen, 255, stdin)) {
 		return;
 	}
 	printd("# SETBOARD FEN: %s\n",fen);
