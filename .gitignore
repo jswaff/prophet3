@@ -9,5 +9,11 @@ logfile.txt
 *.exe
 *.stackdump
 
+### Jetbrains ###
+.idea
+*.iws
+*.iml
+*.ipr
+
 prophet3
 
