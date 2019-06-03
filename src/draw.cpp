@@ -21,67 +21,65 @@
  *
  */
 bool is_lack_of_mating_material(position *pos) {
-	assert(pos);
+    assert(pos);
 
-	int num_knights=0,num_white_sq_bishops=0,num_black_sq_bishops=0;
+    int num_knights=0,num_white_sq_bishops=0,num_black_sq_bishops=0;
 
-	for (int sq=0;sq<64;sq++) {
-		switch(pos->piece[sq]) {
-			// any position with a pawn, rook, or queen is not drawn by lack of mating material
-			case PAWN:
-			case -PAWN:
-			case ROOK:
-			case -ROOK:
-			case QUEEN:
-			case -QUEEN:
-				return false;
+    for (int sq=0;sq<64;sq++) {
+        switch(pos->piece[sq]) {
+            // any position with a pawn, rook, or queen is not drawn by lack of mating material
+            case PAWN:
+            case -PAWN:
+            case ROOK:
+            case -ROOK:
+            case QUEEN:
+            case -QUEEN:
+                return false;
 
-			// a position with more than one knight is not drawn by lack of mating material
-			case KNIGHT:
-			case -KNIGHT:
-				num_knights++;
-				if (num_knights>1) return false;
-				if (num_white_sq_bishops>0 || num_black_sq_bishops>0) return false;
-				break;
+            // a position with more than one knight is not drawn by lack of mating material
+            case KNIGHT:
+            case -KNIGHT:
+                num_knights++;
+                if (num_knights>1) return false;
+                if (num_white_sq_bishops>0 || num_black_sq_bishops>0) return false;
+                break;
 
-			// a position with bishops on opposite colors is not drawn
-			case BISHOP:
-			case -BISHOP:
-				if (is_light_sq((square_t)sq)) {
-					num_white_sq_bishops++;
-				} else {
-					num_black_sq_bishops++;
-				}
-				if (num_white_sq_bishops>0 && num_black_sq_bishops>0) return false;
-				if (num_knights>0) return false;
-				break;
-		}
-	}
+            // a position with bishops on opposite colors is not drawn
+            case BISHOP:
+            case -BISHOP:
+                if (is_light_sq((square_t)sq)) {
+                    num_white_sq_bishops++;
+                } else {
+                    num_black_sq_bishops++;
+                }
+                if (num_white_sq_bishops>0 && num_black_sq_bishops>0) return false;
+                if (num_knights>0) return false;
+                break;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 bool is_draw_by_rep(position *pos,undo *undo_stack) {
-	assert(pos);
-	assert(pos->move_counter >= 0 && pos->move_counter < MAX_MOVES_PER_GAME);
-	assert(pos->fifty_counter >= 0 && pos->fifty_counter <= pos->move_counter);
-	assert(pos->hash_key==build_hash_key(pos));
-	assert(undo_stack);
+    assert(pos);
+    assert(pos->move_counter >= 0 && pos->move_counter < MAX_MOVES_PER_GAME);
+    assert(pos->fifty_counter >= 0 && pos->fifty_counter <= pos->move_counter);
+    assert(pos->hash_key==build_hash_key(pos));
+    assert(undo_stack);
 
-	uint32 reps = 0;
-	for (uint32 i=(pos->move_counter-pos->fifty_counter);i<pos->move_counter;i++) {
-		if ((undo_stack+i)->hash_key==pos->hash_key) {
-			reps++;
-		}
-	}
+    uint32 reps = 0;
+    for (uint32 i=(pos->move_counter-pos->fifty_counter);i<pos->move_counter;i++) {
+        if ((undo_stack+i)->hash_key==pos->hash_key) {
+            reps++;
+        }
+    }
 
-	return reps >= 2;
+    return reps >= 2;
 }
 
 bool is_draw_by_50(position *pos) {
-	assert(pos);
-	return pos->fifty_counter >= 100;
+    assert(pos);
+    return pos->fifty_counter >= 100;
 }
-
-
 

@@ -49,109 +49,109 @@ enum hash_entry_t { MOVE_ONLY,LOWER_BOUND,UPPER_BOUND,EXACT_SCORE };
 enum move_order_stage { PVMOVE,HASHMV,GENCAPS,CAPTURES_PROMOS,KILLER1,KILLER2,GENNONCAPS,REMAINING };
 
 enum game_status { INPROGRESS,CHECKMATED,STALEMATED,DRAW_MATERIAL,
-				DRAW_BY_50,DRAW_REP,RESIGN };
+                DRAW_BY_50,DRAW_REP,RESIGN };
 
 typedef struct {
-	int32 val1;
-	int32 val2;
+    int32 val1;
+    int32 val2;
 } int32_pair;
 
 typedef struct {
-	bool val1;
-	bool val2;
-	bool val3;
+    bool val1;
+    bool val2;
+    bool val3;
 } bool_triple;
 
 typedef struct {
-	int32 piece[64];
-	uint32 piece_counts[2][7];
-	color_t player;
-	square_t ep_sq;
-	uint32 castling_rights;
-	uint32 move_counter;
-	uint32 fifty_counter;
-	square_t white_king;
-	square_t black_king;
-	uint64 white_pawns;
-	uint64 black_pawns;
-	uint64 white_knights;
-	uint64 black_knights;
-	uint64 white_bishops;
-	uint64 black_bishops;
-	uint64 white_rooks;
-	uint64 black_rooks;
-	uint64 white_queens;
-	uint64 black_queens;
-	uint64 white_pieces;
-	uint64 black_pieces;
-	uint64 hash_key;
-	uint64 pawn_key;
+    int32 piece[64];
+    uint32 piece_counts[2][7];
+    color_t player;
+    square_t ep_sq;
+    uint32 castling_rights;
+    uint32 move_counter;
+    uint32 fifty_counter;
+    square_t white_king;
+    square_t black_king;
+    uint64 white_pawns;
+    uint64 black_pawns;
+    uint64 white_knights;
+    uint64 black_knights;
+    uint64 white_bishops;
+    uint64 black_bishops;
+    uint64 white_rooks;
+    uint64 black_rooks;
+    uint64 white_queens;
+    uint64 black_queens;
+    uint64 white_pieces;
+    uint64 black_pieces;
+    uint64 hash_key;
+    uint64 pawn_key;
 } position;
 
 typedef struct {
-	int n; // number of moves
-	move mv[MAX_PLY];
+    int n; // number of moves
+    move mv[MAX_PLY];
 } move_line;
 
 typedef struct {
 
-	uint64 fail_highs;
-	uint64 fail_lows;
-	uint64 hash_exact_scores;
+    uint64 fail_highs;
+    uint64 fail_lows;
+    uint64 hash_exact_scores;
 
-	uint64 nodes;
-	uint64 qnodes;
-	move_line last_pv;
-	move_line first_line_searched;
-	uint64 prunes;
+    uint64 nodes;
+    uint64 qnodes;
+    move_line last_pv;
+    move_line first_line_searched;
+    uint64 prunes;
 
 } search_stats;
 
 typedef struct {
-	move mv;
-	uint64 hash_key;
-	piece_t captured;
-	square_t ep_sq;
-	uint32 fifty_counter;
-	uint32 castling_rights;
+    move mv;
+    uint64 hash_key;
+    piece_t captured;
+    square_t ep_sq;
+    uint32 fifty_counter;
+    uint32 castling_rights;
 } undo;
 
 typedef struct {
-	uint64 pieces[7][2][64];
-	uint64 ptm[2];
-	uint64 casting_rights[16];
-	uint64 ep[65]; // include NO_SQUARE
+    uint64 pieces[7][2][64];
+    uint64 ptm[2];
+    uint64 casting_rights[16];
+    uint64 ep[65]; // include NO_SQUARE
 } zobrist_keys;
 
 typedef struct {
-	uint64 key;
-	uint64 val;
+    uint64 key;
+    uint64 val;
 } hash_entry;
 
 typedef struct {
-	hash_entry *tblptr;
-	uint32 tblsize;
-	uint64 tblmask;
-	uint64 probes;
-	uint64 hits;
-	uint64 collisions;
+    hash_entry *tblptr;
+    uint32 tblsize;
+    uint64 tblmask;
+    uint64 probes;
+    uint64 hits;
+    uint64 collisions;
 } hash_table;
 
 typedef struct {
-	move_order_stage next_stage;
-	bool caps_only;
-	move pv_move;
-	move hash_move;
-	move killer1;
-	move killer2;
-	move *startp;
-	move *endp;
-	move *currentp;
+    move_order_stage next_stage;
+    bool caps_only;
+    move pv_move;
+    move hash_move;
+    move killer1;
+    move killer2;
+    move *startp;
+    move *endp;
+    move *currentp;
 } move_order_dto;
 
 typedef struct {
-	move mv;
-	int32 freq;
+    move mv;
+    int32 freq;
 } move_freq_pair;
 
 typedef square_t (*dirFuncType)(square_t);
@@ -323,7 +323,7 @@ bool is_zugzwang(position *pos);
 
 // prune
 bool prune(position *pos,move last_move,bool incheck,bool gives_check,
-		int32 extensions,int32 alpha,int32 beta,int32 depth);
+        int32 extensions,int32 alpha,int32 beta,int32 depth);
 
 // search
 bool is_abort_search();
@@ -336,9 +336,9 @@ void set_stop_time(int32 stop_time);
 void set_abort_iterator(bool abort_iterator); // also sets abort_search
 
 int32 search(position *p,move_line *pv,int32 alpha,int32 beta,int32 ply,
-		search_stats *stats,move *move_stack,undo *undo_stack,bool show_thinking);
+        search_stats *stats,move *move_stack,undo *undo_stack,bool show_thinking);
 int32 qsearch(position *pos,int32 alpha,int32 beta,int32 ply,int32 qply,bool incheck,
-		search_stats *stats,move *startp,undo *undo_stack);
+        search_stats *stats,move *startp,undo *undo_stack);
 
 // see
 int32 see(position *pos,move mv);
