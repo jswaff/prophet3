@@ -1,5 +1,7 @@
 # prophet3
 
+NOTE - Prophet3 is no longer under active development!  See Prophet4 - https://github.com/jswaff/prophet4 .
+
 a C++ as a better C based chess engine
 
 ## Introduction 
