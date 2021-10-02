@@ -1,4 +1,4 @@
-# NOTE - Prophet3 is no longer under active development!  See Prophet4 - https://github.com/jswaff/prophet4 .
+# NOTE - Prophet3 is no longer under active development!  See Prophet4 - https://github.com/jswaff/prophet .
 
 
 # prophet3
@@ -12,12 +12,10 @@ Winboard (Windows) or Xboard (Linux/Mac) graphical user interface.
 
 http://www.gnu.org/software/xboard/
 
-You can read more about Prophet at http://jamesswafford.com/prophet .
-
 
 ## Installing
 
-To build Prophet, you'll need a C++ compiler with SQLite3 development libraries.  On Ubuntu that's libsqlite3-dev.  If you just want binaries, you can download them from http://jamesswafford.com/prophet .
+To build Prophet, you'll need a C++ compiler with SQLite3 development libraries.  On Ubuntu that's libsqlite3-dev.
 
 If you have the proper build tools, just do:
 
